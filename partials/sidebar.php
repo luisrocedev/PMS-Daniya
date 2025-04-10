@@ -10,6 +10,7 @@ $sidebarItems = [
     'empleados.php'        => 'Empleados',
     'habitaciones.php'     => 'Habitaciones',
     'reservas.php'         => 'Reservas',
+    'reportes_avanzados.php' => 'Reportes Avanzados',
     'mantenimiento.php'    => 'Mantenimiento',
     'facturas.php'         => 'Facturas',
     'tarifas.php'          => 'Tarifas',
