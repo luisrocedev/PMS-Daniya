@@ -9,6 +9,7 @@ $sidebarItems = [
     'clientes.php'         => 'Clientes',
     'empleados.php'        => 'Empleados',
     'habitaciones.php'     => 'Habitaciones',
+    'reservas.php'         => 'Reservas',
     'mantenimiento.php'    => 'Mantenimiento',
     'facturas.php'         => 'Facturas'
 ];
