@@ -167,3 +167,13 @@ VALUES
     (1, 'ana_recepcion', '1234', 1),
     (2, 'carlos_camarero', 'abcd', 1),
     (8, 'ricardo_gerente', 'admin', 1);
+
+CREATE TABLE tarifas (
+    id_tarifa INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_tarifa VARCHAR(100) NOT NULL,
+    tipo_habitacion VARCHAR(50) NOT NULL,   -- Ejs: "Doble", "Suite", "Individual"
+    precio DECIMAL(10,2) NOT NULL,         -- Precio base por noche
+    temporada VARCHAR(50) NOT NULL,        -- Ejs: "Baja", "Media", "Alta" o "Todo el año"
+    fecha_inicio DATE NOT NULL,            -- Rango de fechas en que aplica la tarifa
+    fecha_fin DATE NOT NULL
+);
