@@ -1,0 +1,253 @@
+/* -------------------------------------------------------
+   RESET BÁSICO
+   ------------------------------------------------------- */
+   * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* -------------------------------------------------------
+     FUENTE GLOBAL Y BODY
+     ------------------------------------------------------- */
+  body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f6fc; /* Fondo suave */
+    color: #333;
+  }
+  
+  /* -------------------------------------------------------
+     CONTENEDOR GENÉRICO
+     ------------------------------------------------------- */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+  
+  /* -------------------------------------------------------
+     NAVBAR (BARRA SUPERIOR)
+     ------------------------------------------------------- */
+  .navbar {
+    background-color: #1f2937;
+    color: #fff;
+    padding: 1rem 2rem; /* algo de horizontal padding extra */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .navbar h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 1px;
+  }
+  
+  .nav-links a {
+    color: #fff;
+    margin-left: 1rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  
+  .nav-links a:hover {
+    color: #a5b4fc; /* un tono de azul más claro al pasar mouse */
+  }
+  
+  /* -------------------------------------------------------
+     SIDEBAR (BARRA LATERAL)
+     ------------------------------------------------------- */
+  .sidebar {
+    width: 220px;
+    background-color: #fff;
+    border-right: 1px solid #e2e8f0;
+    padding: 1rem;
+  }
+  
+  .sidebar a {
+    display: block;
+    color: #333;
+    padding: 0.75rem 0;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+  }
+  
+  .sidebar a:hover {
+    background-color: #f0f0f0;
+  }
+  
+  /* -------------------------------------------------------
+     ÁREA DE CONTENIDO PRINCIPAL
+     ------------------------------------------------------- */
+  .main-content {
+    flex: 1;
+    background-color: #fff;
+    margin-left: 1rem;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+  
+  /* -------------------------------------------------------
+     SECCIONES: TARJETAS, PANELES, ETC.
+     ------------------------------------------------------- */
+  .card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    margin: 1rem 0;
+    transition: box-shadow 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+  }
+  
+  /* -------------------------------------------------------
+     BOTONES
+     ------------------------------------------------------- */
+  .btn {
+    display: inline-block;
+    background-color: #3b82f6;
+    color: #fff;
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn:hover {
+    background-color: #2563eb;
+  }
+  
+  /* -------------------------------------------------------
+     TABLAS
+     ------------------------------------------------------- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+  th {
+    background-color: #f9fafb;
+    font-weight: 600;
+  }
+  
+  /* -------------------------------------------------------
+     TÍTULOS DE PÁGINA
+     ------------------------------------------------------- */
+  .page-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+  
+  /* -------------------------------------------------------
+     AJUSTES RESPONSIVOS
+     ------------------------------------------------------- */
+  @media (max-width: 768px) {
+    .sidebar {
+      display: none;
+    }
+    .main-content {
+      margin-left: 0;
+    }
+  }
+  
+  /* -------------------------------------------------------
+     ESTILOS PARA EL LOGIN (vibecoding style)
+     ------------------------------------------------------- */
+  
+  /* Cuerpo con login centrado verticalmente */
+  body.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  
+  /* Contenedor principal del login */
+  .login-container {
+    background-color: #fff;
+    max-width: 420px;
+    width: 90%;
+    margin: 2rem auto;
+    padding: 2rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    border-radius: 10px;
+  }
+  
+  /* Título del login */
+  .login-container h1 {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: #1f2937;
+    font-size: 1.8rem;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Etiquetas de los campos */
+  .login-container label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 600;
+    color: #4b5563;
+  }
+  
+  /* Inputs de texto y password */
+  .login-container input[type="text"],
+  .login-container input[type="password"] {
+    width: 100%;
+    padding: 0.7rem;
+    margin-top: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  .login-container input[type="text"]:focus,
+  .login-container input[type="password"]:focus {
+    border-color: #3b82f6;
+  }
+  
+  /* Botón de login */
+  .login-container button[type="submit"] {
+    margin-top: 1.5rem;
+    width: 100%;
+    background-color: #3b82f6;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    padding: 0.8rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    font-weight: 600;
+  }
+  .login-container button[type="submit"]:hover {
+    background-color: #2563eb;
+  }
+  
+  /* Mensaje de error */
+  .error-message {
+    color: #ef4444; /* rojo suave */
+    font-weight: 600;
+    margin: 1rem 0;
+    text-align: center;
+  }
+  
