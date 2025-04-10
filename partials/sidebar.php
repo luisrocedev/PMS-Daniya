@@ -11,7 +11,8 @@ $sidebarItems = [
     'habitaciones.php'     => 'Habitaciones',
     'reservas.php'         => 'Reservas',
     'mantenimiento.php'    => 'Mantenimiento',
-    'facturas.php'         => 'Facturas'
+    'facturas.php'         => 'Facturas',
+    'calendario.php'       => 'Calendario',
 ];
 
 
