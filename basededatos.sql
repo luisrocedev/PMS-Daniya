@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS pms_daniya_denia;
-USE pms_daniya_denia;
+CREATE DATABASE IF NOT EXISTS ;
+USE ;
 
 CREATE TABLE roles (
     id_rol INT AUTO_INCREMENT PRIMARY KEY,
