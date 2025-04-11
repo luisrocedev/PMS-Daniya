@@ -13,7 +13,26 @@ class SuperModel
     }
 
     /**
-     * Obtener todos los registros de una tabla
+     * Método auxiliar para obtener la clave primaria de una tabla.
+     * Se incluye una condición específica para las tablas que no siguen
+     * la convención "id_" + (nombre en singular), como es el caso de "habitaciones".
+     */
+    private function getPrimaryKey($tabla)
+    {
+        // Caso específico para la tabla "mantenimiento"
+        if ($tabla === 'mantenimiento') {
+            return 'id_incidencia';
+        }
+        // Caso específico para la tabla "habitaciones"
+        if ($tabla === 'habitaciones') {
+            return 'id_habitacion';
+        }
+        // Para el resto, se utiliza la convención básica: eliminar la "s" final
+        return 'id_' . rtrim($tabla, 's');
+    }
+
+    /**
+     * Obtener todos los registros de una tabla.
      */
     public function getAll($tabla)
     {
@@ -24,12 +43,11 @@ class SuperModel
     }
 
     /**
-     * Obtener un registro por ID (asumiendo columna 'id_<tabla>' como PK)
+     * Obtener un registro por ID.
      */
     public function getById($tabla, $id)
     {
-        // Por convención, la PK se llama id_{nombre_tabla} (ej: id_empleado)
-        $pk = 'id_' . rtrim($tabla, 's'); // Ejemplo: "empleados" => "id_empleado"
+        $pk = $this->getPrimaryKey($tabla);
         $sql = "SELECT * FROM $tabla WHERE $pk = :id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':id', $id);
@@ -38,12 +56,11 @@ class SuperModel
     }
 
     /**
-     * Insertar un nuevo registro. $data es un array asociativo: ['columna' => 'valor', ...]
+     * Insertar un nuevo registro. 
+     * $data es un array asociativo: ['columna' => 'valor', ...]
      */
     public function create($tabla, $data)
     {
-        // Ej: $data = ['nombre' => 'Ana', 'apellidos' => 'García', ...]
-        // Generamos dinámicamente la parte de "INSERT INTO $tabla (campo1, campo2, ...) VALUES (:campo1, :campo2, ...)"
         $columnas = array_keys($data);
         $columnasString = implode(', ', $columnas);
         $parametrosString = ':' . implode(', :', $columnas);
@@ -51,7 +68,6 @@ class SuperModel
         $sql = "INSERT INTO $tabla ($columnasString) VALUES ($parametrosString)";
         $stmt = $this->pdo->prepare($sql);
 
-        // Asignamos los valores
         foreach ($data as $col => $val) {
             $stmt->bindValue(":$col", $val);
         }
@@ -60,12 +76,11 @@ class SuperModel
     }
 
     /**
-     * Actualizar un registro existente (basado en la PK)
+     * Actualizar un registro existente (basado en la PK).
      */
     public function update($tabla, $id, $data)
     {
-        $pk = 'id_' . rtrim($tabla, 's');
-        // Creamos el string de SET dinamicamente: "campo1 = :campo1, campo2 = :campo2, ..."
+        $pk = $this->getPrimaryKey($tabla);
         $setPart = [];
         foreach ($data as $col => $val) {
             $setPart[] = "$col = :$col";
@@ -75,22 +90,20 @@ class SuperModel
         $sql = "UPDATE $tabla SET $setString WHERE $pk = :id";
         $stmt = $this->pdo->prepare($sql);
 
-        // Bindeamos datos del array
         foreach ($data as $col => $val) {
             $stmt->bindValue(":$col", $val);
         }
-        // Bindeamos la PK
         $stmt->bindValue(':id', $id);
 
         return $stmt->execute();
     }
 
     /**
-     * Eliminar un registro
+     * Eliminar un registro.
      */
     public function delete($tabla, $id)
     {
-        $pk = 'id_' . rtrim($tabla, 's');
+        $pk = $this->getPrimaryKey($tabla);
         $sql = "DELETE FROM $tabla WHERE $pk = :id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':id', $id);

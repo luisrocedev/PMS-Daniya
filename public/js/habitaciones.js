@@ -66,13 +66,14 @@ function listarHabitaciones() {
     fetch(`../api/habitaciones.php?id=${idHab}`, { method: 'DELETE' })
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          alert(data.msg);
-          listarHabitaciones();
-        } else {
-          alert(data.error || 'No se pudo eliminar la habitación');
-        }
+          if (data.success) {
+              alert(data.msg);
+              listarHabitaciones();  // función que recarga la lista
+          } else {
+              // Se muestra el mensaje de error recibido de la API
+              alert(data.error || 'No se pudo eliminar la habitación');
+          }
       })
       .catch(err => console.error('Error en eliminarHabitacion:', err));
-  }
+}
   
