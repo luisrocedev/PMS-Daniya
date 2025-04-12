@@ -5,6 +5,8 @@ if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../login.php');
     exit;
 }
+header('Location: reservas_integradas.php');
+exit;
 ?>
 <!DOCTYPE html>
 <html lang="es">

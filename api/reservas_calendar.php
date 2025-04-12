@@ -4,56 +4,66 @@ header('Content-Type: application/json');
 session_start();
 
 if (!isset($_SESSION['usuario_id'])) {
-    echo json_encode([]);
-    exit;
+  echo json_encode([]);
+  exit;
 }
 
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/SuperModel.php';
 
-// Obtenemos las reservas
-$superModel = new SuperModel();
-$reservas = $superModel->getAll('reservas');  // Devuelve todas
+$pdo = Database::getInstance()->getConnection();
 
-/* Formato FullCalendar:
-[
-  {
-    "title": "Reserva #3 - Cliente 1",
-    "start": "2025-04-15",
-    "end":   "2025-04-17"
-  },
-  ...
-]
-*/
+// Recoger parámetros opcionales
+$tipo = isset($_GET['tipo']) ? trim($_GET['tipo']) : '';
+$start = isset($_GET['start']) ? $_GET['start'] : null;
+$end   = isset($_GET['end'])   ? $_GET['end']   : null;
 
-// Convertimos cada reserva a un evento del calendario
-$eventos = [];
-
-foreach ($reservas as $res) {
-    $idRes = $res['id_reserva'];
-    $idCli = $res['id_cliente'];
-    $idHab = $res['id_habitacion'];
-    $fEnt = $res['fecha_entrada']; // "2025-04-15"
-    $fSal = $res['fecha_salida'];  // "2025-04-17"
-    $estado = $res['estado_reserva'];
-
-    // Podrías buscar el nombre del cliente para el 'title'
-    // pero con "Reserva #$idRes" ya nos sirve.
-    $titleEvento = "Reserva #$idRes (Hab $idHab) - $estado";
-
-    // FullCalendar espera que 'end' sea exclusivo: si la reserva termina el 17,
-    // el evento se dibuja hasta el 16 inclusive (dependiendo de la config).
-    // A veces conviene sumar un día a 'end' para ver el día de salida completo.
-    // Depende de tu preferencia. EJEMPLO:
-    $fechaSalidaInclusiva = date('Y-m-d', strtotime($fSal . ' +1 day'));
-
-    $eventos[] = [
-        'id'    => $idRes,
-        'title' => $titleEvento,
-        'start' => $fEnt,               // '2025-04-15'
-        'end'   => $fechaSalidaInclusiva // '2025-04-18' si sumaste 1 día
-    ];
+if ($tipo) {
+  // Si se solicita filtrar por tipo de habitación, realizamos join con la tabla habitaciones
+  $sql = "SELECT r.* 
+            FROM reservas r 
+            JOIN habitaciones h ON r.id_habitacion = h.id_habitacion 
+            WHERE h.tipo_habitacion = :tipo";
+  // Si además se enviaron parámetros de fecha, agregamos el filtro
+  if ($start && $end) {
+    $sql .= " AND r.fecha_entrada BETWEEN :start AND :end";
+  }
+  $stmt = $pdo->prepare($sql);
+  $stmt->bindValue(':tipo', $tipo);
+  if ($start && $end) {
+    $stmt->bindValue(':start', $start);
+    $stmt->bindValue(':end', $end);
+  }
+  $stmt->execute();
+  $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} else {
+  // Si no se filtra por tipo, se obtienen todas las reservas
+  // También se puede agregar filtro de fecha aquí si lo deseas
+  $superModel = new SuperModel();
+  $reservas = $superModel->getAll('reservas');
 }
 
-// Devolvemos en JSON
+$eventos = [];
+foreach ($reservas as $res) {
+  $idRes = $res['id_reserva'];
+  $idCli = $res['id_cliente'];
+  $idHab = $res['id_habitacion'];
+  $fEnt = $res['fecha_entrada']; // Ej: "2025-04-15"
+  $fSal = $res['fecha_salida'];  // Ej: "2025-04-17"
+  $estado = $res['estado_reserva'];
+
+  // Título del evento: incluye ID, habitación y estado (puedes mejorar el detalle)
+  $titleEvento = "Reserva #$idRes (Hab $idHab) - $estado";
+
+  // Para que el día de salida se muestre completo en FullCalendar (sumar 1 día)
+  $fechaSalidaInclusiva = date('Y-m-d', strtotime($fSal . ' +1 day'));
+
+  $eventos[] = [
+    'id'    => $idRes,
+    'title' => $titleEvento,
+    'start' => $fEnt,
+    'end'   => $fechaSalidaInclusiva
+  ];
+}
+
 echo json_encode($eventos);

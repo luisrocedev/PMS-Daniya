@@ -30,28 +30,33 @@ try {
      */
 
     if ($method === 'GET') {
-        // Permitir búsqueda opcional: search (para id_reserva, id_cliente o id_habitacion) y estado
-        $search = $_GET['search'] ?? '';
-        $estado = $_GET['estado'] ?? '';
-        $page   = isset($_GET['page']) ? intval($_GET['page']) : 1;
-        $limit  = isset($_GET['limit']) ? intval($_GET['limit']) : 5;
-        if ($page < 1) {
-            $page = 1;
-        }
-        if ($limit < 1) {
-            $limit = 5;
-        }
-        $offset = ($page - 1) * $limit;
-
+        // Si se pasa un id en la query, se devuelve esa reserva específica
         if ($id) {
-            // Obtener una reserva específica
             $reserva = $superModel->getById('reservas', $id);
             echo json_encode($reserva);
             exit;
         } else {
-            // Construir la cláusula WHERE de manera dinámica
+            // Permitir búsqueda opcional: search (para id_reserva, id_cliente o id_habitacion), estado y rango de fechas (fecha_entrada)
+            $search = $_GET['search'] ?? '';
+            $estado = $_GET['estado'] ?? '';
+            $page   = isset($_GET['page']) ? intval($_GET['page']) : 1;
+            $limit  = isset($_GET['limit']) ? intval($_GET['limit']) : 5;
+            if ($page < 1) {
+                $page = 1;
+            }
+            if ($limit < 1) {
+                $limit = 5;
+            }
+            $offset = ($page - 1) * $limit;
+
+            // Nuevos parámetros para el filtro de rango de fechas en fecha_entrada
+            $fechaInicioFiltro = $_GET['fecha_inicio_filtro'] ?? '';
+            $fechaFinFiltro    = $_GET['fecha_fin_filtro'] ?? '';
+
+            // Construir la cláusula WHERE de forma dinámica
             $where = " WHERE 1=1 ";
             $params = [];
+
             if ($search) {
                 $where .= " AND (id_reserva LIKE :s OR id_cliente LIKE :s OR id_habitacion LIKE :s) ";
                 $params[':s'] = "%$search%";
@@ -60,7 +65,13 @@ try {
                 $where .= " AND estado_reserva = :estado ";
                 $params[':estado'] = $estado;
             }
-            // Contar el total de resultados
+            if ($fechaInicioFiltro && $fechaFinFiltro) {
+                $where .= " AND fecha_entrada BETWEEN :fechaInicio AND :fechaFin ";
+                $params[':fechaInicio'] = $fechaInicioFiltro;
+                $params[':fechaFin'] = $fechaFinFiltro;
+            }
+
+            // Consulta para contar el total
             $sqlCount = "SELECT COUNT(*) as total FROM reservas $where";
             $stmtC = $pdo->prepare($sqlCount);
             foreach ($params as $k => $v) {
@@ -69,7 +80,7 @@ try {
             $stmtC->execute();
             $total = $stmtC->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-            // Obtener los datos con paginación
+            // Consulta principal con LIMIT/OFFSET
             $sql = "SELECT * FROM reservas $where LIMIT :lim OFFSET :off";
             $stmt = $pdo->prepare($sql);
             foreach ($params as $k => $v) {
