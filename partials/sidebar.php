@@ -2,21 +2,20 @@
 // partials/sidebar.php
 
 $sidebarItems = [
-    'dashboard.php'        => 'Inicio',
-    'checkin_checkout.php' => 'Check-in/Check-out',
-    'ocupacion.php'        => 'Ocupación',
-    'reportes.php'         => 'Reportes',
-    'clientes.php'         => 'Clientes',
-    'empleados.php'        => 'Empleados',
-    'habitaciones.php'     => 'Habitaciones',
-    'reservas.php'         => 'Reservas',
-    'reportes_avanzados.php' => 'Reportes Avanzados',
-    'mantenimiento.php'    => 'Mantenimiento',
-    'facturas.php'         => 'Facturas',
-    'tarifas.php'          => 'Tarifas',
-    'calendario.php'       => 'Calendario',
+    'dashboard.php'           => 'Inicio',
+    'checkin_checkout.php'    => 'Check-in/Check-out',
+    // Se reemplaza "ocupacion.php" por la nueva "ocupacion_detallada.php",
+    'reportes.php'            => 'Reportes',
+    'clientes.php'            => 'Clientes',
+    'empleados.php'           => 'Empleados',
+    'habitaciones.php'        => 'Habitaciones',
+    'reservas.php'            => 'Reservas',
+    'reportes_avanzados.php'  => 'Reportes Avanzados',
+    'mantenimiento.php'       => 'Mantenimiento',
+    'facturas.php'            => 'Facturas',
+    'tarifas.php'             => 'Tarifas',
+    'calendario.php'          => 'Calendario',
 ];
-
 
 ?>
 

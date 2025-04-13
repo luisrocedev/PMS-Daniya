@@ -250,4 +250,27 @@
     margin: 1rem 0;
     text-align: center;
   }
-  
+/* CSS para tooltips personalizados en FullCalendar */
+.fc-event {
+  font-size: 0.9rem;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.fc-event:hover {
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+/* Uso de colores según el estado, por ejemplo */
+.fc-event[data-status="Confirmada"] {
+  background-color: #d1e7dd; /* verde suave */
+}
+
+.fc-event[data-status="Cancelada"] {
+  background-color: #f8d7da; /* rojo suave */
+}
+
+.fc-event[data-status="Pendiente"] {
+  background-color: #fff3cd; /* amarillo suave */
+}

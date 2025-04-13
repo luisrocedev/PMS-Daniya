@@ -5,7 +5,6 @@
 $navItems = [
     'dashboard.php'        => 'Inicio',
     'checkin_checkout.php' => 'Check-in/Check-out',
-    'ocupacion.php'        => 'Ocupación',
     'reportes.php'         => 'Reportes',
     'clientes.php'         => 'Clientes',
     'empleados.php'        => 'Empleados',

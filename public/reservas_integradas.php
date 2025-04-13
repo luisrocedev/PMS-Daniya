@@ -25,7 +25,6 @@ if (!isset($_SESSION['usuario_id'])) {
 
     <div class="d-flex" style="margin-top:1rem;">
         <?php include __DIR__ . '/../partials/sidebar.php'; ?>
-
         <div class="main-content container-fluid">
             <h2 class="page-title">Gestión de Reservas Integradas</h2>
 
@@ -388,7 +387,7 @@ if (!isset($_SESSION['usuario_id'])) {
             document.getElementById('modalEditarReserva').style.display = 'none';
         }
 
-        // --- Integración de FullCalendar ---
+        // --- Integración de FullCalendar con Drag & Drop ---
         let calendar;
 
         function renderCalendar(filterTipo = '') {
@@ -399,6 +398,7 @@ if (!isset($_SESSION['usuario_id'])) {
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'es',
+                editable: true, // Habilitamos la edición (drag & drop)
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
@@ -407,6 +407,40 @@ if (!isset($_SESSION['usuario_id'])) {
                 // Al hacer clic en una fecha se abre el modal para crear reserva
                 dateClick: function(info) {
                     abrirModalNuevaReservaCalendario(info.dateStr);
+                },
+                // Callback para actualizar la fecha al mover un evento
+                eventDrop: function(info) {
+                    let idReserva = info.event.id;
+                    let newStart = info.event.startStr;
+                    // FullCalendar maneja el final de forma exclusiva, si no hay event.end se usa el mismo día
+                    let newEnd = info.event.endStr ? info.event.endStr : newStart;
+
+                    // Enviar actualización vía PUT al endpoint
+                    const formData = new URLSearchParams({
+                        fecha_entrada: newStart,
+                        fecha_salida: newEnd
+                    });
+
+                    fetch(`../api/reservas.php?id=${idReserva}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert("Reserva actualizada correctamente.");
+                            } else {
+                                alert("Error al actualizar la reserva: " + (data.error || ""));
+                                info.revert(); // Revertir cambio si falla
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error en eventDrop: ", error);
+                            info.revert();
+                        });
                 },
                 events: function(fetchInfo, successCallback, failureCallback) {
                     let url = `../api/reservas_calendar.php?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`;
@@ -513,7 +547,7 @@ if (!isset($_SESSION['usuario_id'])) {
                 .catch(e => console.error('Error al crear reserva desde calendario:', e));
         }
 
-        // Sincronización en tiempo real con setInterval para refrescar la lista y el calendario cada 10 segundos
+        // Sincronización en tiempo real con setInterval para refrescar lista y calendario cada 10 segundos
         document.addEventListener('DOMContentLoaded', () => {
             listarReservasPaginado(1);
             renderCalendar();
