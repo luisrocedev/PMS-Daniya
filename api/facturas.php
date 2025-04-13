@@ -1,20 +1,20 @@
 <?php
 // api/facturas.php
-header('Content-Type: application/json');
-session_start();
+header('Content-Type: application/json');                   // Aseguramos que la respuesta sea JSON
+session_start();                                            // Iniciar sesión para acceder a $_SESSION
 
 try {
-    require_once __DIR__ . '/../core/Database.php';
-    require_once __DIR__ . '/../core/SuperModel.php';
+    require_once __DIR__ . '/../core/Database.php';         // Asegúrate de que la ruta sea correcta
+    require_once __DIR__ . '/../core/SuperModel.php';       // Asegúrate de que la ruta sea correcta
 
     // Verificar autenticación
-    if (!isset($_SESSION['usuario_id'])) {
-        echo json_encode(['error' => 'No autenticado']);
-        exit;
+    if (!isset($_SESSION['usuario_id'])) {                  // Verifica si el usuario está autenticado
+        echo json_encode(['error' => 'No autenticado']);    // Respuesta JSON si no está autenticado
+        exit;                                               // Salir del script
     }
 
-    $superModel = new SuperModel();
-    $method = $_SERVER['REQUEST_METHOD'];
+    $superModel = new SuperModel();                         // Instancia del modelo para interactuar con la base de datos 
+    $method = $_SERVER['REQUEST_METHOD'];                   // Obtener el método HTTP de la solicitud
     $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
     /**
