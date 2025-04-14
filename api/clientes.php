@@ -5,6 +5,8 @@ session_start();
 
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/SuperModel.php';
+// Agregamos la llamada a FunnelLogic
+require_once __DIR__ . '/../core/FunnelLogic.php';
 
 if (!isset($_SESSION['usuario_id'])) {
     echo json_encode(['error' => 'No autenticado']);
@@ -87,15 +89,29 @@ if ($method === 'GET') {
     $telefono = $_POST['telefono'] ?? '';
     $dir      = $_POST['direccion'] ?? '';
 
+    // Si mandan estado_funnel:
+    $estadoFunnel = $_POST['estado_funnel'] ?? null;
+
     $ok = $superModel->create('clientes', [
         'nombre'   => $nombre,
         'apellidos' => $apellidos,
         'dni'      => $dni,
         'email'    => $email,
         'telefono' => $telefono,
-        'direccion' => $dir
+        'direccion' => $dir,
+        // Guardamos si existe la columna en la BD
+        'estado_funnel' => $estadoFunnel
     ]);
+
     if ($ok) {
+        // Si tenemos un estado_funnel, enviamos email
+        if ($estadoFunnel) {
+            FunnelLogic::enviarEmailFunnel([
+                'nombre'        => $nombre,
+                'email'         => $email,
+                'estado_funnel' => $estadoFunnel
+            ]);
+        }
         echo json_encode(['success' => true, 'msg' => 'Cliente creado con éxito']);
     } else {
         echo json_encode(['error' => 'No se pudo crear el cliente']);
@@ -109,8 +125,23 @@ if ($method === 'GET') {
     }
     parse_str(file_get_contents('php://input'), $input);
 
+    // Hacemos el update
     $ok = $superModel->update('clientes', $id, $input);
+
     if ($ok) {
+        // Si en $input se recibió estado_funnel, enviamos correo
+        if (!empty($input['estado_funnel'])) {
+            // Podemos obtener los datos antiguos o mezclarlos
+            // al menos necesitamos nombre y email
+            $clienteActual = $superModel->getById('clientes', $id);
+            if ($clienteActual) {
+                FunnelLogic::enviarEmailFunnel([
+                    'nombre'        => $clienteActual['nombre'] ?? '',
+                    'email'         => $clienteActual['email']  ?? '',
+                    'estado_funnel' => $clienteActual['estado_funnel'] ?? 'Nuevo'
+                ]);
+            }
+        }
         echo json_encode(['success' => true, 'msg' => 'Cliente actualizado']);
     } else {
         echo json_encode(['error' => 'No se pudo actualizar']);

@@ -27,20 +27,19 @@ if (!isset($_SESSION['usuario_id'])) {
             <h2 class="page-title">Gestión de Clientes</h2>
 
             <!-- Filtros -->
-            <div class="card">
+            <div class="card mb-3">
                 <h3>Buscar Clientes</h3>
                 <form onsubmit="event.preventDefault(); listarClientesPaginado(1);">
                     <label for="searchCli">Buscar (Nombre/Apellidos/DNI):</label>
-                    <input type="text" id="searchCli">
-
-                    <button type="submit" class="btn">Aplicar Filtro</button>
+                    <input type="text" id="searchCli" class="form-control">
+                    <button type="submit" class="btn btn-primary mt-2">Aplicar Filtro</button>
                 </form>
             </div>
 
             <!-- Tabla y paginación -->
-            <div class="card">
+            <div class="card mb-3">
                 <h3>Listado de Clientes</h3>
-                <table>
+                <table class="table table-striped">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -67,24 +66,34 @@ if (!isset($_SESSION['usuario_id'])) {
                 <h3>Crear Cliente</h3>
                 <form onsubmit="event.preventDefault(); crearCliente();">
                     <label for="nombreCli">Nombre:</label>
-                    <input type="text" id="nombreCli" required>
+                    <input type="text" id="nombreCli" class="form-control" required>
 
                     <label for="apellidosCli">Apellidos:</label>
-                    <input type="text" id="apellidosCli" required>
+                    <input type="text" id="apellidosCli" class="form-control" required>
 
                     <label for="dniCli">DNI:</label>
-                    <input type="text" id="dniCli" required>
+                    <input type="text" id="dniCli" class="form-control" required>
 
                     <label for="emailCli">Email:</label>
-                    <input type="email" id="emailCli">
+                    <input type="email" id="emailCli" class="form-control">
 
                     <label for="telCli">Teléfono:</label>
-                    <input type="text" id="telCli">
+                    <input type="text" id="telCli" class="form-control">
 
                     <label for="dirCli">Dirección:</label>
-                    <input type="text" id="dirCli">
+                    <input type="text" id="dirCli" class="form-control">
 
-                    <button type="submit" class="btn">Crear</button>
+                    <!-- NUEVO: Selector para Estado Funnel -->
+                    <label for="estado_funnel">Estado Funnel:</label>
+                    <select id="estado_funnel" class="form-select">
+                        <option value="">Selecciona un estado (opcional)</option>
+                        <option value="Nuevo">Nuevo</option>
+                        <option value="Interesado">Interesado</option>
+                        <option value="En Negociacion">En Negociacion</option>
+                        <option value="Cerrado">Cerrado</option>
+                    </select>
+
+                    <button type="submit" class="btn btn-success mt-2">Crear</button>
                 </form>
             </div>
         </div>
@@ -116,17 +125,17 @@ if (!isset($_SESSION['usuario_id'])) {
                     data.forEach(cli => {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-          <td>${cli.id_cliente}</td>
-          <td>${cli.nombre}</td>
-          <td>${cli.apellidos}</td>
-          <td>${cli.dni}</td>
-          <td>${cli.email || ''}</td>
-          <td>${cli.telefono || ''}</td>
-          <td>${cli.direccion || ''}</td>
-          <td>
-             <button class="btn" onclick="eliminarCliente(${cli.id_cliente})">Eliminar</button>
-          </td>
-        `;
+                            <td>${cli.id_cliente}</td>
+                            <td>${cli.nombre}</td>
+                            <td>${cli.apellidos}</td>
+                            <td>${cli.dni}</td>
+                            <td>${cli.email || ''}</td>
+                            <td>${cli.telefono || ''}</td>
+                            <td>${cli.direccion || ''}</td>
+                            <td>
+                                <button class="btn btn-danger" onclick="eliminarCliente(${cli.id_cliente})">Eliminar</button>
+                            </td>
+                        `;
                         tbody.appendChild(tr);
                     });
 
@@ -171,33 +180,41 @@ if (!isset($_SESSION['usuario_id'])) {
             const email = document.getElementById('emailCli').value;
             const telefono = document.getElementById('telCli').value;
             const direccion = document.getElementById('dirCli').value;
+            const estadoFunnel = document.getElementById('estado_funnel').value; // Nuevo campo
+
+            // Preparamos los datos a enviar, incluyendo el campo 'estado_funnel' si se seleccionó
+            const params = new URLSearchParams({
+                nombre,
+                apellidos,
+                dni,
+                email,
+                telefono,
+                direccion
+            });
+            if (estadoFunnel) {
+                params.append('estado_funnel', estadoFunnel);
+            }
 
             fetch('../api/clientes.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     },
-                    body: new URLSearchParams({
-                        nombre,
-                        apellidos,
-                        dni,
-                        email,
-                        telefono,
-                        direccion
-                    })
+                    body: params
                 })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
                         alert(data.msg);
                         listarClientesPaginado(1);
-                        // Limpieza
+                        // Limpieza de campos
                         document.getElementById('nombreCli').value = '';
                         document.getElementById('apellidosCli').value = '';
                         document.getElementById('dniCli').value = '';
                         document.getElementById('emailCli').value = '';
                         document.getElementById('telCli').value = '';
                         document.getElementById('dirCli').value = '';
+                        document.getElementById('estado_funnel').value = '';
                     } else {
                         alert(data.error || 'No se pudo crear el cliente');
                     }
