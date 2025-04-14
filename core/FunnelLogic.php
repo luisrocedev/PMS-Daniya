@@ -46,8 +46,8 @@ class FunnelLogic
             $mail->isSMTP();
             $mail->Host       = 'smtp.ionos.es';
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'luisrodriguez@luisrocedev.es';
-            $mail->Password   = '9acGNx3ETSLhEZ.';
+            $mail->Username   = '';
+            $mail->Password   = '.';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
             $mail->Port       = 465;
 
@@ -55,7 +55,7 @@ class FunnelLogic
             $mail->CharSet    = 'UTF-8';
 
             // Configuración del remitente y destinatario
-            $mail->setFrom('luisrodriguez@luisrocedev.es', 'CRM-PMS');
+            $mail->setFrom('', 'CRM-PMS');
             $mail->addAddress($email, $nombre);
 
             // Contenido del correo
