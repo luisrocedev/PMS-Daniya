@@ -5,8 +5,7 @@ session_start();
 
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/SuperModel.php';
-// Agregamos la llamada a FunnelLogic
-require_once __DIR__ . '/../core/FunnelLogic.php';
+require_once __DIR__ . '/../core/FunnelLogic.php'; // Para enviar email
 
 if (!isset($_SESSION['usuario_id'])) {
     echo json_encode(['error' => 'No autenticado']);
@@ -18,13 +17,16 @@ $method = $_SERVER['REQUEST_METHOD'];
 $id = $_GET['id'] ?? 0;
 
 /**
- * GET => /clientes.php
+ * Rutas:
+ * GET => /api/clientes.php
  *   - Parámetros opcionales:
  *       search (filtra por nombre, apellidos, dni)
  *       page, limit (paginación)
+ *   - O bien /api/clientes.php?id=XX para un solo cliente
+ *
  * POST => Crear un cliente
- * PUT => Actualizar un cliente ?id=XX
- * DELETE => Eliminar un cliente ?id=XX
+ * PUT => Actualizar un cliente (con ?id=XX)
+ * DELETE => Eliminar un cliente (con ?id=XX)
  */
 
 if ($method === 'GET') {
@@ -59,7 +61,7 @@ if ($method === 'GET') {
             $stmtCount->bindValue($k, $v);
         }
         $stmtCount->execute();
-        $total = $stmtCount->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+        $total = $stmtCount->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
 
         // Consulta principal con LIMIT/OFFSET
         $sql = "SELECT * FROM clientes $where LIMIT :limit OFFSET :offset";
@@ -67,10 +69,10 @@ if ($method === 'GET') {
         foreach ($params as $k => $v) {
             $stmt->bindValue($k, $v);
         }
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         echo json_encode([
             'data'  => $data,
@@ -82,29 +84,29 @@ if ($method === 'GET') {
     }
 } elseif ($method === 'POST') {
     // Crear
-    $nombre   = $_POST['nombre']   ?? '';
-    $apellidos = $_POST['apellidos'] ?? '';
-    $dni      = $_POST['dni']      ?? '';
-    $email    = $_POST['email']    ?? '';
-    $telefono = $_POST['telefono'] ?? '';
-    $dir      = $_POST['direccion'] ?? '';
-
-    // Si mandan estado_funnel:
+    $nombre     = $_POST['nombre']     ?? '';
+    $apellidos  = $_POST['apellidos']  ?? '';
+    $dni        = $_POST['dni']        ?? '';
+    $email      = $_POST['email']      ?? '';
+    $telefono   = $_POST['telefono']   ?? '';
+    $direccion  = $_POST['direccion']  ?? '';
+    // Aquí capturamos el estado_funnel si viene en POST
     $estadoFunnel = $_POST['estado_funnel'] ?? null;
 
+    // Insertar en BD
     $ok = $superModel->create('clientes', [
-        'nombre'   => $nombre,
-        'apellidos' => $apellidos,
-        'dni'      => $dni,
-        'email'    => $email,
-        'telefono' => $telefono,
-        'direccion' => $dir,
-        // Guardamos si existe la columna en la BD
+        'nombre'        => $nombre,
+        'apellidos'     => $apellidos,
+        'dni'           => $dni,
+        'email'         => $email,
+        'telefono'      => $telefono,
+        'direccion'     => $direccion,
+        // 'estado_funnel' => la columna debe existir en BD
         'estado_funnel' => $estadoFunnel
     ]);
 
     if ($ok) {
-        // Si tenemos un estado_funnel, enviamos email
+        // Si tenemos un estado_funnel, se envía email "bonito" con la nueva plantilla
         if ($estadoFunnel) {
             FunnelLogic::enviarEmailFunnel([
                 'nombre'        => $nombre,
@@ -125,14 +127,11 @@ if ($method === 'GET') {
     }
     parse_str(file_get_contents('php://input'), $input);
 
-    // Hacemos el update
     $ok = $superModel->update('clientes', $id, $input);
 
     if ($ok) {
-        // Si en $input se recibió estado_funnel, enviamos correo
+        // Si en $input se recibió estado_funnel, reenviamos correo
         if (!empty($input['estado_funnel'])) {
-            // Podemos obtener los datos antiguos o mezclarlos
-            // al menos necesitamos nombre y email
             $clienteActual = $superModel->getById('clientes', $id);
             if ($clienteActual) {
                 FunnelLogic::enviarEmailFunnel([
