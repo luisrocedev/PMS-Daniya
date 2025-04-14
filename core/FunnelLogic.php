@@ -139,13 +139,23 @@ class FunnelLogic
             $mail->Host       = 'smtp.ionos.es';
             $mail->SMTPAuth   = true;
             $mail->Username   = '';
+<<<<<<< HEAD
             $mail->Password   = '';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+=======
+            $mail->Password   = '.';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
+>>>>>>> f54c1b8a539f0976dd689c7149942aed258a9989
             $mail->Port       = 465;
             $mail->CharSet    = 'UTF-8';
 
+<<<<<<< HEAD
             // Remitente y destinatario
             $mail->setFrom('', 'CRM-PMS Daniya');
+=======
+            // Configuración del remitente y destinatario
+            $mail->setFrom('', 'CRM-PMS');
+>>>>>>> f54c1b8a539f0976dd689c7149942aed258a9989
             $mail->addAddress($email, $nombre);
 
             // Ajustamos para que sea HTML
