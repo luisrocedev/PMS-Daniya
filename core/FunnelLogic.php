@@ -118,7 +118,7 @@ class FunnelLogic
         </head>
         <body>
             <div class="container">
-            <img src="https://daniyadenia.com/wp-content/uploads/2023/09/logo-daniya-negro22.png" alt="Banner" />
+                <img src="https://via.placeholder.com/1200x200/5f9ea0/ffffff?text=Hotel+Daniya+Denia" alt="Banner Daniya Denia" class="banner" />
                 <div class="content">
                     {$mensajeHTML}
                 </div>
@@ -138,14 +138,14 @@ class FunnelLogic
             $mail->isSMTP();
             $mail->Host       = 'smtp.ionos.es';
             $mail->SMTPAuth   = true;
-            $mail->Username   = '';
-            $mail->Password   = '';
+            $mail->Username   = '@.es';
+            $mail->Password   = '.';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port       = 465;
             $mail->CharSet    = 'UTF-8';
 
             // Remitente y destinatario
-            $mail->setFrom('', 'CRM-PMS Daniya');
+            $mail->setFrom('@.es', 'CRM-PMS Daniya');
             $mail->addAddress($email, $nombre);
 
             // Ajustamos para que sea HTML
