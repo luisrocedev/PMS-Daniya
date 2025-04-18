@@ -1,6 +1,8 @@
 <?php
 // core/Database.php
 
+require_once __DIR__ . '/../vendor/autoload.php'; // Cargar dotenv
+
 class Database
 {
     private static $instance = null;
@@ -8,23 +10,21 @@ class Database
 
     private function __construct()
     {
-        // Cargamos la configuración
-        $config = require __DIR__ . '/../config/config.php';
-        $dbConfig = $config['db'];
+        // Cargar variables de entorno desde .env
+        $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..'); // Asegúrate de que apunte al directorio raíz
+        $dotenv->load();
 
-        // Construimos el DSN para PDO
-        $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['dbname']};charset={$dbConfig['charset']}";
+        // Construir DSN para PDO
+        $dsn = "mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'] . ";charset=" . $_ENV['DB_CHARSET'];
 
         try {
-            $this->pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['password']);
-            // Configuramos manejo de errores en modo EXCEPTION
+            $this->pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS']);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
             die("Error de conexión: " . $e->getMessage());
         }
     }
 
-    // Singleton: única instancia
     public static function getInstance()
     {
         if (!self::$instance) {
@@ -33,7 +33,6 @@ class Database
         return self::$instance;
     }
 
-    // Para obtener el objeto PDO y hacer queries
     public function getConnection()
     {
         return $this->pdo;

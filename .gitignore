@@ -1,0 +1,10 @@
+# Ignorar archivos sensibles
+.env
+/config/config.php
+
+# Ignorar dependencias de Composer
+/vendor/
+
+# Ignorar archivos temporales
+*.log
+*.tmp
