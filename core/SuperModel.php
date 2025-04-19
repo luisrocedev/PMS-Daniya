@@ -27,6 +27,11 @@ class SuperModel
         if ($tabla === 'habitaciones') {
             return 'id_habitacion';
         }
+        if ($tabla === 'turnos')             return 'id_turno';
+        if ($tabla === 'horarios_empleado')  return 'id_horario';
+        if ($tabla === 'asistencia')         return 'id_asistencia';
+        if ($tabla === 'ausencias')          return 'id_ausencia';;
+
         // Para el resto, se utiliza la convención básica: eliminar la "s" final
         return 'id_' . rtrim($tabla, 's');
     }

@@ -16,9 +16,10 @@ $sidebarItems = [
     'tarifas.php'             => 'Tarifas',
     'calendario.php'          => 'Calendario',
     'marketing_emails.php'    => 'Emails de Marketing',
-    'configuracion.php'       => 'Configuración',
-    'logout.php'              => 'Cerrar Sesión',
-    'test_email.php'          => 'Test Email', // Solo para pruebas, eliminar en producción
+    'rrhh.php' => 'RRHH',      // nueva entrada
+
+
+
 ];
 
 ?>
