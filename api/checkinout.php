@@ -2,6 +2,13 @@
 header('Content-Type: application/json');
 session_start();
 
+// Verificar autenticación
+if (!isset($_SESSION['usuario_id'])) {
+    http_response_code(403);
+    echo json_encode(['error' => 'No autorizado']);
+    exit;
+}
+
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/SuperModel.php';
 

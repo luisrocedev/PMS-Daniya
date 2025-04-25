@@ -59,6 +59,7 @@ switch ($action) {
         ]);
         break;
 
+    case 'ingresos_diarios':
     case 'ingresos_daily':
         // Ingresos diarios últimos 30 días
         $sql = "SELECT 

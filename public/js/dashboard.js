@@ -23,10 +23,17 @@ function initializeCounters() {
         suffix: ''
     };
 
-    occupancyCounter = new CountUp('occupancyRate', 0, 0, 1, 2, {...options, suffix: '%'});
-    revenueCounter = new CountUp('revenue', 0, 0, 2, 2, {...options, prefix: '€'});
-    bookingsCounter = new CountUp('bookings', 0, 0, 0, 2, options);
-    checkinsCounter = new CountUp('checkins', 0, 0, 0, 2, options);
+    // Usar la versión UMD de CountUp correctamente
+    occupancyCounter = new countUp.CountUp('occupancyRate', 0, {...options, suffix: '%'});
+    revenueCounter = new countUp.CountUp('revenue', 0, {...options, prefix: '€'});
+    bookingsCounter = new countUp.CountUp('bookings', 0, options);
+    checkinsCounter = new countUp.CountUp('checkins', 0, options);
+
+    // Iniciar los contadores
+    occupancyCounter.start();
+    revenueCounter.start();
+    bookingsCounter.start();
+    checkinsCounter.start();
 }
 
 function loadDashboardData() {
@@ -112,10 +119,20 @@ function updateOccupancyChart(data) {
 }
 
 function updateRevenueChart(data) {
+    // Validar que los datos existan y sean arrays
+    if (!data || !Array.isArray(data.valores) || !Array.isArray(data.labels)) {
+        console.error('Datos de ingresos no válidos para el gráfico');
+        return;
+    }
+
+    // Asegurarse de que tenemos datos válidos
+    const valores = data.valores.map(v => Number(v) || 0);
+    const fechas = data.labels || [];
+
     const options = {
         series: [{
             name: 'Ingresos',
-            data: data.valores
+            data: valores
         }],
         chart: {
             type: 'area',
@@ -128,8 +145,8 @@ function updateRevenueChart(data) {
             enabled: false
         },
         xaxis: {
-            categories: data.fechas,
-            type: 'datetime'
+            categories: fechas,
+            type: 'category' // Cambiado de 'datetime' a 'category'
         },
         yaxis: {
             labels: {
@@ -146,27 +163,41 @@ function updateRevenueChart(data) {
         }
     };
 
-    if (!revenueChart) {
-        revenueChart = new ApexCharts(document.querySelector("#revenueChart"), options);
-        revenueChart.render();
-    } else {
-        revenueChart.updateOptions(options);
+    try {
+        if (!revenueChart) {
+            revenueChart = new ApexCharts(document.querySelector("#revenueChart"), options);
+            revenueChart.render();
+        } else {
+            revenueChart.updateOptions(options);
+        }
+    } catch (error) {
+        console.error('Error al actualizar el gráfico de ingresos:', error);
     }
 }
 
 function updateRevenueStats(data) {
-    const total = data.valores.reduce((a, b) => a + b, 0);
+    // Asegurarnos de que data y data.valores existen
+    if (!data || !data.valores) {
+        console.error('No se recibieron datos de ingresos válidos');
+        return;
+    }
+
+    const total = Array.isArray(data.valores) ? data.valores.reduce((a, b) => a + (Number(b) || 0), 0) : 0;
     revenueCounter.update(total);
     
     const trend = document.getElementById('revenueTrend');
-    const lastDayChange = ((data.valores[data.valores.length - 1] - data.valores[data.valores.length - 2]) / data.valores[data.valores.length - 2] * 100).toFixed(1);
-    
-    if (lastDayChange > 0) {
-        trend.className = 'trend-indicator trend-up';
-        trend.innerHTML = `<i class="fas fa-arrow-up"></i> ${lastDayChange}%`;
-    } else if (lastDayChange < 0) {
-        trend.className = 'trend-indicator trend-down';
-        trend.innerHTML = `<i class="fas fa-arrow-down"></i> ${Math.abs(lastDayChange)}%`;
+    if (Array.isArray(data.valores) && data.valores.length >= 2) {
+        const lastDayChange = ((data.valores[data.valores.length - 1] - data.valores[data.valores.length - 2]) / data.valores[data.valores.length - 2] * 100).toFixed(1);
+        
+        if (lastDayChange > 0) {
+            trend.className = 'trend-indicator trend-up';
+            trend.innerHTML = `<i class="fas fa-arrow-up"></i> ${lastDayChange}%`;
+        } else if (lastDayChange < 0) {
+            trend.className = 'trend-indicator trend-down';
+            trend.innerHTML = `<i class="fas fa-arrow-down"></i> ${Math.abs(lastDayChange)}%`;
+        }
+    } else {
+        trend.innerHTML = '';
     }
 }
 
@@ -191,13 +222,19 @@ function updateUpcomingCheckins(data) {
     const tbody = document.getElementById('upcomingCheckins');
     tbody.innerHTML = '';
     
-    data.slice(0, 5).forEach(checkin => {
+    // Usar el array de proximasLlegadas del objeto data
+    if (!data || !data.proximasLlegadas) {
+        console.error('No se recibieron datos de check-ins válidos');
+        return;
+    }
+
+    data.proximasLlegadas.forEach(checkin => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${checkin.hora}</td>
-            <td>${checkin.cliente}</td>
-            <td>${checkin.habitacion}</td>
-            <td><span class="badge ${checkin.estado === 'Pendiente' ? 'bg-warning' : 'bg-success'}">${checkin.estado}</span></td>
+            <td>${new Date(checkin.fecha_entrada).toLocaleTimeString('es', {hour: '2-digit', minute:'2-digit'})}</td>
+            <td>${checkin.nombre} ${checkin.apellidos}</td>
+            <td>${checkin.numero_habitacion}</td>
+            <td><span class="badge bg-warning">Pendiente</span></td>
         `;
         tbody.appendChild(tr);
     });

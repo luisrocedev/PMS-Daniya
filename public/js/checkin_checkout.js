@@ -17,27 +17,51 @@ function initializeApp() {
 // Configurar auto-refresh
 function setupAutoRefresh() {
   const autoRefreshToggle = document.getElementById('auto-refresh');
-  autoRefreshToggle.addEventListener('change', () => {
-    if (autoRefreshToggle.checked) {
-      refreshInterval = setInterval(cargarCheckInOut, REFRESH_INTERVAL);
-    } else {
-      clearInterval(refreshInterval);
-    }
-  });
+  if (autoRefreshToggle) {
+    autoRefreshToggle.addEventListener('change', () => {
+      if (autoRefreshToggle.checked) {
+        refreshInterval = setInterval(cargarCheckInOut, REFRESH_INTERVAL);
+      } else {
+        clearInterval(refreshInterval);
+      }
+    });
+  }
 }
 
 // Inicializar event listeners
 function initializeEventListeners() {
-  document.getElementById('formCheckinModal').addEventListener('submit', handleCheckinSubmit);
-  document.getElementById('btn-add-cargo').addEventListener('click', handleNewCargo);
-  document.querySelector('a#tab-cargos').addEventListener('shown.bs.tab', () => cargarCargos(window.reservaId));
+  const formCheckinModal = document.getElementById('formCheckinModal');
+  if (formCheckinModal) {
+    formCheckinModal.addEventListener('submit', handleCheckinSubmit);
+  }
+
+  const btnAddCargo = document.getElementById('btn-add-cargo');
+  if (btnAddCargo) {
+    btnAddCargo.addEventListener('click', handleNewCargo);
+  }
+
+  const tabCargos = document.querySelector('a#tab-cargos');
+  if (tabCargos) {
+    tabCargos.addEventListener('shown.bs.tab', () => {
+      if (window.reservaId) {
+        cargarCargos(window.reservaId);
+      }
+    });
+  }
 }
 
 // Cargar datos de check-in/check-out
 async function cargarCheckInOut() {
   try {
     const response = await fetch('../api/checkinout.php');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
     
     updateStats(data);
     renderCheckInTable(data.pendientesCheckIn || []);
@@ -49,6 +73,27 @@ async function cargarCheckInOut() {
     });
   } catch (error) {
     console.error('Error al cargar datos:', error);
+    mostrarError('Error al cargar los datos. Por favor, verifica tu conexión e inténtalo de nuevo.');
+  }
+}
+
+// Mostrar mensajes de error
+function mostrarError(mensaje) {
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+  errorDiv.innerHTML = `
+    ${mensaje}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `;
+  
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) {
+    mainContent.insertBefore(errorDiv, mainContent.firstChild);
+    
+    // Auto-cerrar después de 5 segundos
+    setTimeout(() => {
+      errorDiv.remove();
+    }, 5000);
   }
 }
 
@@ -60,10 +105,11 @@ function updateStats(data) {
     'completed-today': (data.completadosHoy?.checkins || 0) + (data.completadosHoy?.checkouts || 0)
   };
 
-  // Animar cambios en las estadísticas
   Object.entries(stats).forEach(([id, value]) => {
     const element = document.getElementById(id);
-    animateValue(element, parseInt(element.textContent), value, 500);
+    if (element) {
+      animateValue(element, parseInt(element.textContent) || 0, value, 500);
+    }
   });
 }
 
@@ -87,6 +133,8 @@ function animateValue(element, start, end, duration) {
 // Renderizar tabla de check-ins
 function renderCheckInTable(checkins) {
   const tbody = document.getElementById('tabla-checkin');
+  if (!tbody) return;
+  
   tbody.innerHTML = checkins.length ? checkins.map(r => `
     <tr>
       <td>${r.id_reserva}</td>
@@ -104,6 +152,8 @@ function renderCheckInTable(checkins) {
 // Renderizar tabla de check-outs
 function renderCheckOutTable(checkouts) {
   const tbody = document.getElementById('tabla-checkout');
+  if (!tbody) return;
+  
   tbody.innerHTML = checkouts.length ? checkouts.map(r => `
     <tr>
       <td>${r.id_reserva}</td>
@@ -120,13 +170,20 @@ function renderCheckOutTable(checkouts) {
 
 // Modal de Check-in
 function abrirModalCheckin(id) {
-  document.getElementById('modalCheckin').style.display = 'block';
-  document.getElementById('id_reserva_modal').value = id;
+  const modal = document.getElementById('modalCheckin');
+  if (modal) {
+    document.getElementById('id_reserva_modal').value = id;
+    modal.style.display = 'block';
+  }
 }
 
 function cerrarModalCheckin() {
-  document.getElementById('modalCheckin').style.display = 'none';
-  document.getElementById('formCheckinModal').reset();
+  const modal = document.getElementById('modalCheckin');
+  if (modal) {
+    modal.style.display = 'none';
+    const form = document.getElementById('formCheckinModal');
+    if (form) form.reset();
+  }
 }
 
 // Manejar envío del formulario de check-in
@@ -139,16 +196,25 @@ async function handleCheckinSubmit(e) {
       method: 'POST',
       body: form
     });
+    
+    if (!uploadResponse.ok) {
+      throw new Error(`HTTP error! status: ${uploadResponse.status}`);
+    }
+    
     const uploadData = await uploadResponse.json();
+    
+    if (uploadData.error) {
+      throw new Error(uploadData.error);
+    }
     
     if (uploadData.success) {
       await hacerCheckIn(form.get('id_reserva'));
     } else {
-      alert(uploadData.error);
+      throw new Error(uploadData.error || 'Error al procesar los documentos');
     }
   } catch (error) {
     console.error('Error en el proceso de check-in:', error);
-    alert('Error al procesar el check-in');
+    mostrarError(`Error al procesar el check-in: ${error.message}`);
   }
 }
 

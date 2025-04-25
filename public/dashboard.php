@@ -20,7 +20,7 @@ if (!isset($_SESSION['usuario_id'])) {
   <!-- ApexCharts para gráficos más avanzados -->
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   <!-- CountUp.js para animaciones numéricas -->
-  <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.min.js"></script>
   <style>
     .stat-card {
       transition: transform 0.3s ease;
