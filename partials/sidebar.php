@@ -8,6 +8,7 @@ $sidebarItems = [
     // Se reemplaza "ocupacion.php" por la nueva "ocupacion_detallada.php",
     'reportes.php'            => 'Reportes',
     'clientes.php'            => 'Clientes',
+    'asistente_cliente.php'    => 'Asistente Virtual', // NUEVO Ítem
     'empleados.php'           => 'Empleados',
     'habitaciones.php'        => 'Habitaciones',
     'reservas.php'            => 'Reservas',
