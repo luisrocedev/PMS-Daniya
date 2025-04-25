@@ -1,38 +1,45 @@
 <?php
-// api/ocupacion.php
 header('Content-Type: application/json');
 session_start();
-
-require_once __DIR__ . '/../core/Database.php';
 
 if (!isset($_SESSION['usuario_id'])) {
     echo json_encode(['error' => 'No autenticado']);
     exit;
 }
 
+require_once __DIR__ . '/../core/Database.php';
+
 $pdo = Database::getInstance()->getConnection();
 
-// Contamos total de habitaciones
-$sqlTotal = "SELECT COUNT(*) as total FROM habitaciones";
-$stmt = $pdo->query($sqlTotal);
-$total = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+// Obtener ocupación actual
+$sql = "SELECT 
+            SUM(CASE WHEN estado = 'Ocupada' THEN 1 ELSE 0 END) as ocupadas,
+            SUM(CASE WHEN estado = 'Mantenimiento' THEN 1 ELSE 0 END) as mantenimiento,
+            SUM(CASE WHEN estado = 'Disponible' THEN 1 ELSE 0 END) as disponibles
+        FROM habitaciones";
 
-// Contamos cuántas están ocupadas
-$sqlOcupadas = "SELECT COUNT(*) as ocupadas FROM habitaciones WHERE estado = 'Ocupada'";
-$stmt2 = $pdo->query($sqlOcupadas);
-$ocupadas = $stmt2->fetch(PDO::FETCH_ASSOC)['ocupadas'];
+$stmt = $pdo->query($sql);
+$ocupacion = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Contamos cuántas están en mantenimiento
-$sqlMantenimiento = "SELECT COUNT(*) as mantenimiento FROM habitaciones WHERE estado = 'Mantenimiento'";
-$stmt3 = $pdo->query($sqlMantenimiento);
-$mantenimiento = $stmt3->fetch(PDO::FETCH_ASSOC)['mantenimiento'];
+// Obtener ocupación de ayer para calcular tendencia
+$sqlAyer = "SELECT 
+            COUNT(*) as total_ocupadas
+            FROM reservas 
+            WHERE fecha_entrada <= DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY)
+            AND fecha_salida >= DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY)
+            AND estado_reserva = 'CheckIn'";
 
-// Calculamos las disponibles
-$disponibles = $total - $ocupadas - $mantenimiento;
+$stmtAyer = $pdo->query($sqlAyer);
+$ocupacionAyer = $stmtAyer->fetch(PDO::FETCH_ASSOC);
 
-echo json_encode([
-    'total' => $total,
-    'ocupadas' => (int) $ocupadas,
-    'mantenimiento' => (int) $mantenimiento,
-    'disponibles' => (int) $disponibles
-]);
+// Calcular tendencia
+$totalHoy = $ocupacion['ocupadas'] + $ocupacion['mantenimiento'] + $ocupacion['disponibles'];
+$porcentajeOcupacionHoy = ($ocupacion['ocupadas'] / $totalHoy) * 100;
+$porcentajeOcupacionAyer = ($ocupacionAyer['total_ocupadas'] / $totalHoy) * 100;
+
+$tendencia = $porcentajeOcupacionHoy - $porcentajeOcupacionAyer;
+
+// Añadir tendencia a la respuesta
+$ocupacion['tendencia'] = round($tendencia, 1);
+
+echo json_encode($ocupacion);

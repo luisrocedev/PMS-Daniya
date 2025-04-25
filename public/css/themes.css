@@ -1,0 +1,164 @@
+/* Tema Claro (por defecto) */
+:root {
+  /* Colores primarios */
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-light: #93c5fd;
+  
+  /* Colores de fondo */
+  --bg-main: #f4f6fc;
+  --bg-card: #ffffff;
+  --bg-sidebar: #1f2937;
+  --bg-sidebar-hover: #374151;
+  
+  /* Colores de texto */
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --text-light: #ffffff;
+  
+  /* Bordes y sombras */
+  --border-color: #e5e7eb;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  
+  /* Estados */
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --info-color: #3b82f6;
+  
+  /* Transiciones */
+  --transition-speed: 0.2s;
+}
+
+/* Tema Oscuro */
+[data-theme="dark"] {
+  /* Colores primarios */
+  --primary-color: #60a5fa;
+  --primary-hover: #3b82f6;
+  --primary-light: #1d4ed8;
+  
+  /* Colores de fondo */
+  --bg-main: #111827;
+  --bg-card: #1f2937;
+  --bg-sidebar: #0f172a;
+  --bg-sidebar-hover: #1e293b;
+  
+  /* Colores de texto */
+  --text-primary: #f9fafb;
+  --text-secondary: #e5e7eb;
+  --text-muted: #9ca3af;
+  --text-light: #ffffff;
+  
+  /* Bordes y sombras */
+  --border-color: #374151;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  
+  /* Estados */
+  --success-color: #059669;
+  --warning-color: #d97706;
+  --danger-color: #dc2626;
+  --info-color: #60a5fa;
+}
+
+/* Animaciones del Dashboard */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseValue {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.dashboard-stat {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.stat-value.changed {
+    animation: pulseValue 0.5s ease-out;
+}
+
+.upcoming-checkin {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Colores y estilos para gráficos */
+.chart-colors {
+    --chart-primary: var(--primary-color);
+    --chart-secondary: var(--primary-light);
+    --chart-success: var(--success-color);
+    --chart-warning: var(--warning-color);
+    --chart-danger: var(--danger-color);
+}
+
+/* Estilos para tarjetas estadísticas */
+.stat-card {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card) 100%);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .stat-card {
+    background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-card) 100%);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Indicadores de tendencia */
+.trend-indicator {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.trend-up {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.trend-down {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* Animaciones para gráficos */
+.chart-container {
+    opacity: 0;
+    animation: fadeIn 0.5s ease-out forwards;
+    animation-delay: 0.3s;
+}

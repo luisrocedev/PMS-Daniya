@@ -1,8 +1,5 @@
 <?php
-// public/dashboard.php
 session_start();
-
-// Si no existe sesión, redirige a login
 if (!isset($_SESSION['usuario_id'])) {
   header('Location: ../login.php');
   exit;
@@ -20,13 +17,59 @@ if (!isset($_SESSION['usuario_id'])) {
   <link rel="stylesheet" href="css/style.css">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- ApexCharts para gráficos más avanzados -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <!-- CountUp.js para animaciones numéricas -->
+  <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.7/dist/countUp.min.js"></script>
   <style>
-    /* Contenedor de gráfico con altura fija para evitar scroll infinito */
-    #grafico-container {
+    .stat-card {
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .chart-container {
       position: relative;
       height: 300px;
-      /* Ajusta este valor según convenga */
-      margin: auto;
+      margin: 1rem 0;
+    }
+
+    .trend-indicator {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+    }
+
+    .trend-up {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .trend-down {
+      background-color: var(--danger-color);
+      color: white;
     }
   </style>
 </head>
@@ -38,78 +81,119 @@ if (!isset($_SESSION['usuario_id'])) {
     <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
     <div class="main-content container">
-      <h2 class="page-title">Bienvenido(a) al PMS de Daniya Denia</h2>
+      <?php
+      include __DIR__ . '/../partials/breadcrumbs.php';
+      echo getBreadcrumbs();
+      ?>
 
-      <!-- Información general -->
-      <div class="card mb-3">
-        <p>Aquí encontrarás un resumen del estado actual del hotel.</p>
-        <ul>
-          <li>Indicadores globales: habitaciones ocupadas, en mantenimiento y disponibles.</li>
-          <li>Accede a la vista detallada para más información o acciones puntuales.</li>
-        </ul>
-        <div class="mt-2">
-          <!-- Botón para ver detalle de ocupación -->
-          <a href="ocupacion_detallada.php" class="btn btn-info">Ver Detalle de Ocupación</a>
+      <h2 class="page-title mb-4">Panel de Control - Daniya Denia</h2>
+
+      <!-- Tarjetas de Estadísticas -->
+      <div class="row g-4 mb-4">
+        <!-- Ocupación -->
+        <div class="col-md-3">
+          <div class="card stat-card">
+            <div class="card-body text-center">
+              <i class="fas fa-bed stat-icon text-primary"></i>
+              <div id="occupancyRate" class="stat-value">0%</div>
+              <div class="stat-label">Ocupación Actual</div>
+              <div id="occupancyTrend" class="trend-indicator"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingresos -->
+        <div class="col-md-3">
+          <div class="card stat-card">
+            <div class="card-body text-center">
+              <i class="fas fa-euro-sign stat-icon text-success"></i>
+              <div id="revenue" class="stat-value">0€</div>
+              <div class="stat-label">Ingresos del Mes</div>
+              <div id="revenueTrend" class="trend-indicator"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reservas -->
+        <div class="col-md-3">
+          <div class="card stat-card">
+            <div class="card-body text-center">
+              <i class="fas fa-calendar-check stat-icon text-info"></i>
+              <div id="bookings" class="stat-value">0</div>
+              <div class="stat-label">Reservas Activas</div>
+              <div id="bookingsTrend" class="trend-indicator"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Check-ins -->
+        <div class="col-md-3">
+          <div class="card stat-card">
+            <div class="card-body text-center">
+              <i class="fas fa-key stat-icon text-warning"></i>
+              <div id="checkins" class="stat-value">0</div>
+              <div class="stat-label">Check-ins Hoy</div>
+              <div id="checkinsTrend" class="trend-indicator"></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Widget Visual: Gráfico de Estado del Hotel -->
-      <div class="card">
-        <h3>Estado del Hotel</h3>
-        <div id="grafico-container">
-          <canvas id="graficoOcupacion"></canvas>
+      <!-- Gráficos -->
+      <div class="row g-4">
+        <!-- Estado del Hotel -->
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title">Estado del Hotel</h3>
+              <div class="chart-container">
+                <canvas id="occupancyChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingresos por Día -->
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title">Ingresos Diarios</h3>
+              <div class="chart-container">
+                <div id="revenueChart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Próximos Check-ins -->
+      <div class="card mt-4">
+        <div class="card-body">
+          <h3 class="card-title">Próximos Check-ins</h3>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Cliente</th>
+                  <th>Habitación</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="upcomingCheckins">
+                <!-- Se llena dinámicamente -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap Bundle con Popper -->
+  <!-- Bootstrap Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script>
-    // Función para cargar datos de ocupación y renderizar gráfico
-    function cargarGraficoOcupacion() {
-      fetch('../api/ocupacion.php')
-        .then(response => response.json())
-        .then(data => {
-          const ctx = document.getElementById('graficoOcupacion').getContext('2d');
-          new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-              labels: ['Ocupadas', 'En Mantenimiento', 'Disponibles'],
-              datasets: [{
-                data: [data.ocupadas, data.mantenimiento, data.disponibles],
-                backgroundColor: [
-                  'rgba(220, 53, 69, 0.6)',
-                  'rgba(255, 193, 7, 0.6)',
-                  'rgba(40, 167, 69, 0.6)'
-                ],
-                borderColor: [
-                  'rgba(220, 53, 69, 1)',
-                  'rgba(255, 193, 7, 1)',
-                  'rgba(40, 167, 69, 1)'
-                ],
-                borderWidth: 1
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'bottom'
-                }
-              }
-            }
-          });
-        })
-        .catch(err => console.error('Error al cargar datos de ocupación:', err));
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      cargarGraficoOcupacion();
-    });
-  </script>
+  <!-- Scripts personalizados -->
+  <script src="js/dashboard.js"></script>
 </body>
 
 </html>
