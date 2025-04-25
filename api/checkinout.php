@@ -13,7 +13,7 @@ try {
     require_once __DIR__ . '/../core/SuperModel.php';
 
     $pdo = Database::getInstance()->getConnection();
-    
+
     if (!$pdo) {
         throw new Exception('Error de conexión a la base de datos');
     }
@@ -68,7 +68,7 @@ try {
     } elseif ($method === 'POST') {
         $action = $_POST['action'] ?? '';
         $id_reserva = intval($_POST['id_reserva'] ?? 0);
-        
+
         if (!$id_reserva) {
             throw new Exception('Falta id_reserva');
         }
