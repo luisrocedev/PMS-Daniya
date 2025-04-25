@@ -57,8 +57,12 @@ async function cargarCheckInOut() {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data = await response.json();
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new TypeError("La respuesta del servidor no es JSON válido");
+    }
     
+    const data = await response.json();
     if (data.error) {
       throw new Error(data.error);
     }
@@ -73,28 +77,33 @@ async function cargarCheckInOut() {
     });
   } catch (error) {
     console.error('Error al cargar datos:', error);
-    mostrarError('Error al cargar los datos. Por favor, verifica tu conexión e inténtalo de nuevo.');
+    mostrarError('Error al cargar los datos. ' + (error.message || 'Por favor, verifica tu conexión e inténtalo de nuevo.'));
   }
 }
 
-// Mostrar mensajes de error
+// Función para mostrar mensajes de error
 function mostrarError(mensaje) {
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'alert alert-danger alert-dismissible fade show';
-  errorDiv.innerHTML = `
-    ${mensaje}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  `;
+  const errorDiv = document.getElementById('error-message') || createErrorDiv();
+  errorDiv.textContent = mensaje;
+  errorDiv.style.display = 'block';
   
-  const mainContent = document.querySelector('.main-content');
-  if (mainContent) {
-    mainContent.insertBefore(errorDiv, mainContent.firstChild);
-    
-    // Auto-cerrar después de 5 segundos
-    setTimeout(() => {
-      errorDiv.remove();
-    }, 5000);
-  }
+  // Ocultar después de 5 segundos
+  setTimeout(() => {
+    errorDiv.style.display = 'none';
+  }, 5000);
+}
+
+// Crear div para mensajes de error si no existe
+function createErrorDiv() {
+  const div = document.createElement('div');
+  div.id = 'error-message';
+  div.className = 'alert alert-danger';
+  div.style.position = 'fixed';
+  div.style.top = '20px';
+  div.style.right = '20px';
+  div.style.zIndex = '1000';
+  document.body.appendChild(div);
+  return div;
 }
 
 // Actualizar estadísticas
