@@ -1,13 +1,12 @@
 <?php
-// api/checkinout.php
 header('Content-Type: application/json');
 session_start();
 
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/SuperModel.php';
 
-$pdo   = Database::getInstance()->getConnection();
-$sm    = new SuperModel();
+$pdo = Database::getInstance()->getConnection();
+$sm = new SuperModel();
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
@@ -15,23 +14,33 @@ if ($method === 'GET') {
     $sql1 = "SELECT r.*, c.nombre AS nombre_cliente, c.apellidos AS apellidos_cliente
              FROM reservas r
              JOIN clientes c ON r.id_cliente = c.id_cliente
-             WHERE r.estado_reserva = 'Confirmada'";
-    $pendCheckIn  = $pdo->query($sql1)->fetchAll(PDO::FETCH_ASSOC);
+             WHERE r.estado_reserva = 'Confirmada'
+             AND DATE(r.fecha_entrada) <= CURRENT_DATE";
+    $pendCheckIn = $pdo->query($sql1)->fetchAll(PDO::FETCH_ASSOC);
 
     // Consultar reservas en CheckIn (para Check-out)
     $sql2 = "SELECT r.*, c.nombre AS nombre_cliente, c.apellidos AS apellidos_cliente
              FROM reservas r
              JOIN clientes c ON r.id_cliente = c.id_cliente
-             WHERE r.estado_reserva = 'CheckIn'";
+             WHERE r.estado_reserva = 'CheckIn'
+             AND DATE(r.fecha_salida) <= CURRENT_DATE";
     $pendCheckOut = $pdo->query($sql2)->fetchAll(PDO::FETCH_ASSOC);
 
+    // Obtener estadísticas de completados hoy
+    $sqlStats = "SELECT 
+        SUM(CASE WHEN estado_reserva = 'CheckIn' AND DATE(ultima_actualizacion) = CURRENT_DATE THEN 1 ELSE 0 END) as checkins,
+        SUM(CASE WHEN estado_reserva = 'CheckOut' AND DATE(ultima_actualizacion) = CURRENT_DATE THEN 1 ELSE 0 END) as checkouts
+    FROM reservas";
+    $stats = $pdo->query($sqlStats)->fetch(PDO::FETCH_ASSOC);
+
     echo json_encode([
-        'pendientesCheckIn'  => $pendCheckIn,
-        'pendientesCheckOut' => $pendCheckOut
+        'pendientesCheckIn' => $pendCheckIn,
+        'pendientesCheckOut' => $pendCheckOut,
+        'completadosHoy' => $stats
     ]);
     exit;
 } elseif ($method === 'POST') {
-    $action     = $_POST['action'] ?? '';
+    $action = $_POST['action'] ?? '';
     $id_reserva = intval($_POST['id_reserva'] ?? 0);
     if (!$id_reserva) {
         echo json_encode(['error' => 'Falta id_reserva']);
@@ -51,7 +60,10 @@ if ($method === 'GET') {
             echo json_encode(['error' => "No se puede hacer CheckIn si la reserva no está Confirmada. Estado actual: $actual"]);
             exit;
         }
-        $sm->update('reservas', $id_reserva, ['estado_reserva' => 'CheckIn']);
+        $sm->update('reservas', $id_reserva, [
+            'estado_reserva' => 'CheckIn',
+            'ultima_actualizacion' => date('Y-m-d H:i:s')
+        ]);
         echo json_encode(['success' => true, 'msg' => 'Check-in realizado']);
         exit;
     } elseif ($action === 'checkout') {
@@ -59,40 +71,53 @@ if ($method === 'GET') {
             echo json_encode(['error' => "No se puede hacer CheckOut si la reserva no está en CheckIn. Estado actual: $actual"]);
             exit;
         }
-        // 1) Total cargos no pagados
-        $stmtC = $pdo->prepare("SELECT SUM(importe) AS total FROM cargos WHERE id_reserva=:id AND pagado=0");
-        $stmtC->execute([':id' => $id_reserva]);
-        $row    = $stmtC->fetch(PDO::FETCH_ASSOC);
-        $totalCargos = $row['total'] ?? 0;
 
-        // 2) Total base de habitación (columna total en reservas)
-        $stmtR = $pdo->prepare("SELECT total FROM reservas WHERE id_reserva=:id");
-        $stmtR->execute([':id' => $id_reserva]);
-        $r2        = $stmtR->fetch(PDO::FETCH_ASSOC);
-        $totalHab  = $r2['total'] ?? 0;
+        // Iniciar transacción
+        $pdo->beginTransaction();
+        try {
+            // 1) Total cargos no pagados
+            $stmtC = $pdo->prepare("SELECT SUM(importe) AS total FROM cargos WHERE id_reserva=:id AND pagado=0");
+            $stmtC->execute([':id' => $id_reserva]);
+            $row = $stmtC->fetch(PDO::FETCH_ASSOC);
+            $totalCargos = $row['total'] ?? 0;
 
-        // 3) Detalle de todos los cargos
-        $stmtD = $pdo->prepare("SELECT id_cargo, descripcion, importe, fecha FROM cargos WHERE id_reserva=:id");
-        $stmtD->execute([':id' => $id_reserva]);
-        $detalle = $stmtD->fetchAll(PDO::FETCH_ASSOC);
+            // 2) Total base de habitación
+            $stmtR = $pdo->prepare("SELECT total FROM reservas WHERE id_reserva=:id");
+            $stmtR->execute([':id' => $id_reserva]);
+            $r2 = $stmtR->fetch(PDO::FETCH_ASSOC);
+            $totalHab = $r2['total'] ?? 0;
 
-        // 4) Crear factura con detalle JSON
-        $factTotal = $totalHab + $totalCargos;
-        $sm->create('facturas', [
-            'id_reserva'    => $id_reserva,
-            'fecha_emision' => date('Y-m-d'),
-            'total'         => $factTotal,
-            'metodo_pago'   => $_POST['metodo_pago'] ?? 'Efectivo',
-            'detalle'       => json_encode($detalle)
-        ]);
+            // 3) Detalle de todos los cargos
+            $stmtD = $pdo->prepare("SELECT id_cargo, descripcion, importe, fecha FROM cargos WHERE id_reserva=:id");
+            $stmtD->execute([':id' => $id_reserva]);
+            $detalle = $stmtD->fetchAll(PDO::FETCH_ASSOC);
 
-        // 5) Marcar cargos como pagados
-        $upd = $pdo->prepare("UPDATE cargos SET pagado=1 WHERE id_reserva=:id");
-        $upd->execute([':id' => $id_reserva]);
+            // 4) Crear factura
+            $factTotal = $totalHab + $totalCargos;
+            $sm->create('facturas', [
+                'id_reserva' => $id_reserva,
+                'fecha_emision' => date('Y-m-d'),
+                'total' => $factTotal,
+                'metodo_pago' => $_POST['metodo_pago'] ?? 'Efectivo',
+                'detalle' => json_encode($detalle)
+            ]);
 
-        // 6) Actualizar estado reserva
-        $sm->update('reservas', $id_reserva, ['estado_reserva' => 'CheckOut']);
-        echo json_encode(['success' => true, 'msg' => 'Check-out realizado']);
+            // 5) Marcar cargos como pagados
+            $upd = $pdo->prepare("UPDATE cargos SET pagado=1 WHERE id_reserva=:id");
+            $upd->execute([':id' => $id_reserva]);
+
+            // 6) Actualizar estado reserva
+            $sm->update('reservas', $id_reserva, [
+                'estado_reserva' => 'CheckOut',
+                'ultima_actualizacion' => date('Y-m-d H:i:s')
+            ]);
+
+            $pdo->commit();
+            echo json_encode(['success' => true, 'msg' => 'Check-out realizado correctamente']);
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            echo json_encode(['error' => 'Error al procesar el check-out: ' . $e->getMessage()]);
+        }
         exit;
     }
 } else {

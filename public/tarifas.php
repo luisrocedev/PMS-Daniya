@@ -10,218 +10,241 @@ if (!isset($_SESSION['usuario_id'])) {
 
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Tarifas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Tarifas - PMS Daniya Denia</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
     <?php include __DIR__ . '/../partials/navbar.php'; ?>
 
-    <div style="display: flex; margin-top: 1rem;">
+    <div class="d-flex">
         <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
-        <div class="main-content">
-            <h2 class="page-title">Gestión de Tarifas</h2>
-
-            <!-- FILTROS -->
-            <div class="card">
-                <h3>Buscar Tarifas</h3>
-                <form onsubmit="event.preventDefault(); listarTarifas(1);">
-                    <label for="tipoHab">Tipo Hab.:</label>
-                    <input type="text" id="tipoHab" placeholder="Doble, Suite, etc.">
-
-                    <label for="tempTar">Temporada:</label>
-                    <input type="text" id="tempTar" placeholder="Alta, Baja, ...">
-
-                    <button class="btn" type="submit">Filtrar</button>
-                </form>
+        <div class="main-content container-fluid">
+            <div class="row mb-4">
+                <div class="col">
+                    <h2 class="page-title">Gestión de Tarifas</h2>
+                </div>
+                <div class="col text-end">
+                    <button class="btn btn-primary" onclick="prepararNuevaTarifa()" data-bs-toggle="modal" data-bs-target="#modalTarifa">
+                        <i class="fas fa-plus me-2"></i>Nueva Tarifa
+                    </button>
+                </div>
             </div>
 
-            <!-- LISTADO DE TARIFAS -->
+            <!-- Resumen de Tarifas -->
+            <div class="row g-4 mb-4">
+                <!-- Total Tarifas -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-tags stat-icon text-primary"></i>
+                            <div id="totalTarifas" class="stat-value">0</div>
+                            <div class="stat-label">Total Tarifas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarifa Media -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-euro-sign stat-icon text-success"></i>
+                            <div id="tarifaPromedio" class="stat-value">0€</div>
+                            <div class="stat-label">Tarifa Media</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarifas Activas -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock stat-icon text-info"></i>
+                            <div id="tarifasActivas" class="stat-value">0</div>
+                            <div class="stat-label">Tarifas Activas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Próximas a Vencer -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-exclamation-triangle stat-icon text-warning"></i>
+                            <div id="tarifasVencer" class="stat-value">0</div>
+                            <div class="stat-label">Próximas a Vencer</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros de búsqueda -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Buscar Tarifas</h3>
+                    <form onsubmit="event.preventDefault(); listarTarifasPaginado(1);" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="filtroTipoHab" class="form-label">Tipo Habitación:</label>
+                            <select id="filtroTipoHab" class="form-select">
+                                <option value="">Todos los tipos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtroTemporada" class="form-label">Temporada:</label>
+                            <select id="filtroTemporada" class="form-select">
+                                <option value="">Todas las temporadas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtroFechaInicio" class="form-label">Fecha Inicio:</label>
+                            <input type="date" id="filtroFechaInicio" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtroFechaFin" class="form-label">Fecha Fin:</label>
+                            <input type="date" id="filtroFechaFin" class="form-control">
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="reset" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-undo me-2"></i>Limpiar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Buscar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabla de Tarifas -->
             <div class="card">
-                <h3>Listado de Tarifas</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Tipo Hab.</th>
-                            <th>Precio</th>
-                            <th>Temporada</th>
-                            <th>F.Inicio</th>
-                            <th>F.Fin</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-tarifas">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Tipo Hab.</th>
+                                    <th class="text-end">Precio</th>
+                                    <th>Temporada</th>
+                                    <th>F. Inicio</th>
+                                    <th>F. Fin</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-tarifas">
+                                <!-- Se llena con JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="paginacionTarifas" class="mt-4">
                         <!-- Se llena con JS -->
-                    </tbody>
-                </table>
-                <div id="paginacionTarifas" style="margin-top:1rem;"></div>
-            </div>
-
-            <!-- FORMULARIO PARA CREAR TARIFA -->
-            <div class="card">
-                <h3>Crear Tarifa</h3>
-                <form onsubmit="event.preventDefault(); crearTarifa();">
-                    <label for="nomTarifa">Nombre Tarifa:</label>
-                    <input type="text" id="nomTarifa" required>
-
-                    <label for="tipoTarifa">Tipo Habitación:</label>
-                    <input type="text" id="tipoTarifa" placeholder="Doble, Suite..." required>
-
-                    <label for="precioTar">Precio:</label>
-                    <input type="number" step="0.01" id="precioTar" required>
-
-                    <label for="tempTar2">Temporada:</label>
-                    <input type="text" id="tempTar2" placeholder="Baja, Alta..." required>
-
-                    <label for="iniTar">Fecha Inicio:</label>
-                    <input type="date" id="iniTar" required>
-
-                    <label for="finTar">Fecha Fin:</label>
-                    <input type="date" id="finTar" required>
-
-                    <button class="btn" type="submit">Crear</button>
-                </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        let limitTar = 5;
+    <!-- Modal Nueva/Editar Tarifa -->
+    <div class="modal fade" id="modalTarifa" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTarifaLabel">Nueva Tarifa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formTarifa" onsubmit="guardarTarifa(event)">
+                        <div class="mb-3">
+                            <label for="nombreTarifa" class="form-label">Nombre:</label>
+                            <input type="text" class="form-control" id="nombreTarifa" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipoHabitacion" class="form-label">Tipo Habitación:</label>
+                            <select class="form-select" id="tipoHabitacion" required>
+                                <option value="">Seleccione tipo</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="precio" class="form-label">Precio:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">€</span>
+                                <input type="number" step="0.01" class="form-control" id="precio" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="temporada" class="form-label">Temporada:</label>
+                            <select class="form-select" id="temporada" required>
+                                <option value="">Seleccione temporada</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fecha_inicio" class="form-label">Fecha Inicio:</label>
+                            <input type="date" class="form-control" id="fecha_inicio" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fecha_fin" class="form-label">Fecha Fin:</label>
+                            <input type="date" class="form-control" id="fecha_fin" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="formTarifa" class="btn btn-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        function listarTarifas(page = 1) {
-            const tipoHab = document.getElementById('tipoHab').value || '';
-            const temporada = document.getElementById('tempTar').value || '';
+    <!-- Modal Detalle Tarifa -->
+    <div class="modal fade" id="modalDetalleTarifa" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalle de Tarifa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">ID Tarifa:</dt>
+                        <dd class="col-sm-8" id="detalleTarifaId"></dd>
 
-            let url = `../api/tarifas.php?page=${page}&limit=${limitTar}`;
-            if (tipoHab) url += `&tipo_hab=${encodeURIComponent(tipoHab)}`;
-            if (temporada) url += `&temporada=${encodeURIComponent(temporada)}`;
+                        <dt class="col-sm-4">Nombre:</dt>
+                        <dd class="col-sm-8" id="detalleTarifaNombre"></dd>
 
-            fetch(url)
-                .then(r => r.json())
-                .then(obj => {
-                    // { data, total, page, limit }
-                    const data = obj.data || [];
-                    const total = obj.total || 0;
-                    const pag = obj.page || 1;
-                    const lim = obj.limit || limitTar;
+                        <dt class="col-sm-4">Tipo Hab.:</dt>
+                        <dd class="col-sm-8" id="detalleTarifaTipo"></dd>
 
-                    // Rellenar tabla
-                    const tbody = document.getElementById('tabla-tarifas');
-                    tbody.innerHTML = '';
-                    data.forEach(t => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                    <td>${t.id_tarifa}</td>
-                    <td>${t.nombre_tarifa}</td>
-                    <td>${t.tipo_habitacion}</td>
-                    <td>${t.precio}</td>
-                    <td>${t.temporada}</td>
-                    <td>${t.fecha_inicio}</td>
-                    <td>${t.fecha_fin}</td>
-                    <td>
-                        <button class="btn" onclick="eliminarTarifa(${t.id_tarifa})">Eliminar</button>
-                    </td>
-                `;
-                        tbody.appendChild(tr);
-                    });
-                    renderPaginacionTarifas(pag, lim, total);
-                })
-                .catch(e => console.error(e));
-        }
+                        <dt class="col-sm-4">Precio:</dt>
+                        <dd class="col-sm-8" id="detalleTarifaPrecio"></dd>
 
-        function renderPaginacionTarifas(page, limit, total) {
-            const divPag = document.getElementById('paginacionTarifas');
-            divPag.innerHTML = '';
-            const totalPages = Math.ceil(total / limit);
+                        <dt class="col-sm-4">Temporada:</dt>
+                        <dd class="col-sm-8" id="detalleTarifaTemporada"></dd>
 
-            if (page > 1) {
-                const btnPrev = document.createElement('button');
-                btnPrev.classList.add('btn');
-                btnPrev.textContent = 'Anterior';
-                btnPrev.onclick = () => listarTarifas(page - 1);
-                divPag.appendChild(btnPrev);
-            }
+                        <dt class="col-sm-4">Fecha Inicio:</dt>
+                        <dd class="col-sm-8" id="detalleTarifaInicio"></dd>
 
-            const sp = document.createElement('span');
-            sp.style.margin = '0 10px';
-            sp.textContent = `Página ${page} de ${totalPages} (Total: ${total})`;
-            divPag.appendChild(sp);
+                        <dt class="col-sm-4">Fecha Fin:</dt>
+                        <dd class="col-sm-8" id="detalleTarifaFin"></dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            if (page < totalPages) {
-                const btnNext = document.createElement('button');
-                btnNext.classList.add('btn');
-                btnNext.textContent = 'Siguiente';
-                btnNext.onclick = () => listarTarifas(page + 1);
-                divPag.appendChild(btnNext);
-            }
-        }
-
-        function crearTarifa() {
-            const nombre_tarifa = document.getElementById('nomTarifa').value;
-            const tipo_habitacion = document.getElementById('tipoTarifa').value;
-            const precio = document.getElementById('precioTar').value;
-            const temporada = document.getElementById('tempTar2').value;
-            const fecha_inicio = document.getElementById('iniTar').value;
-            const fecha_fin = document.getElementById('finTar').value;
-
-            fetch('../api/tarifas.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({
-                        nombre_tarifa,
-                        tipo_habitacion,
-                        precio,
-                        temporada,
-                        fecha_inicio,
-                        fecha_fin
-                    })
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Tarifa creada con éxito');
-                        listarTarifas(1);
-                        // Limpieza
-                        document.getElementById('nomTarifa').value = '';
-                        document.getElementById('tipoTarifa').value = '';
-                        document.getElementById('precioTar').value = '';
-                        document.getElementById('tempTar2').value = '';
-                        document.getElementById('iniTar').value = '';
-                        document.getElementById('finTar').value = '';
-                    } else {
-                        alert(data.error || 'No se pudo crear la tarifa');
-                    }
-                })
-                .catch(e => console.error(e));
-        }
-
-        function eliminarTarifa(idT) {
-            if (!confirm('¿Seguro que deseas eliminar esta tarifa?')) return;
-            fetch(`../api/tarifas.php?id=${idT}`, {
-                    method: 'DELETE'
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Tarifa eliminada');
-                        listarTarifas();
-                    } else {
-                        alert(data.error || 'No se pudo eliminar');
-                    }
-                })
-                .catch(e => console.error(e));
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            listarTarifas(1);
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/tarifas.js"></script>
 </body>
 
 </html>

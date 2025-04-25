@@ -10,195 +10,219 @@ if (!isset($_SESSION['usuario_id'])) {
 
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Facturas</title>
+    <title>Gestión de Facturas - PMS Daniya Denia</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
     <?php include __DIR__ . '/../partials/navbar.php'; ?>
 
-    <div style="display:flex; margin-top:1rem;">
+    <div class="d-flex" style="margin-top:1rem;">
         <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
-        <div class="main-content">
-            <h2 class="page-title">Facturas</h2>
-
-            <!-- FILTRO POR RESERVA (ejemplo) -->
-            <div class="card">
-                <h3>Buscar Facturas</h3>
-                <form onsubmit="event.preventDefault(); listarFacturasPaginado(1);">
-                    <label for="reservaF">ID Reserva:</label>
-                    <input type="number" id="reservaF">
-                    <button class="btn" type="submit">Filtrar</button>
-                </form>
+        <div class="main-content container-fluid">
+            <div class="row mb-4">
+                <div class="col">
+                    <h2 class="page-title">Gestión de Facturas</h2>
+                </div>
             </div>
 
-            <!-- LISTADO -->
-            <div class="card">
-                <h3>Listado de Facturas</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>ID Reserva</th>
-                            <th>Fecha Emisión</th>
-                            <th>Total</th>
-                            <th>Método Pago</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-fact"></tbody>
-                </table>
-                <div id="paginacionFact" style="margin-top:1rem;"></div>
+            <!-- Resumen de Facturas -->
+            <div class="row g-4 mb-4">
+                <!-- Total Facturas -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-file-invoice stat-icon text-primary"></i>
+                            <div id="totalFacturas" class="stat-value">0</div>
+                            <div class="stat-label">Total Facturas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Importe -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-euro-sign stat-icon text-success"></i>
+                            <div id="totalImporte" class="stat-value">0€</div>
+                            <div class="stat-label">Total Facturado</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Promedio por Factura -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calculator stat-icon text-info"></i>
+                            <div id="promedioFactura" class="stat-value">0€</div>
+                            <div class="stat-label">Promedio por Factura</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facturas Pendientes -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock stat-icon text-warning"></i>
+                            <div id="facturasPendientes" class="stat-value">0</div>
+                            <div class="stat-label">Pendientes de Cobro</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- CREAR -->
-            <div class="card">
-                <h3>Crear Factura</h3>
-                <form onsubmit="event.preventDefault(); crearFactura();">
-                    <label for="idResF">ID Reserva:</label>
-                    <input type="number" id="idResF" required>
+            <!-- Filtros de búsqueda -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Buscar Facturas</h3>
+                    <form onsubmit="event.preventDefault(); listarFacturasPaginado(1);" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="reservaF" class="form-label">Reserva:</label>
+                            <select id="reservaF" class="form-select">
+                                <option value="">Todas las reservas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fechaInicio" class="form-label">Fecha Inicio:</label>
+                            <input type="date" id="fechaInicio" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fechaFin" class="form-label">Fecha Fin:</label>
+                            <input type="date" id="fechaFin" class="form-control">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-                    <label for="fechaF">Fecha Emisión:</label>
-                    <input type="date" id="fechaF" required>
-
-                    <label for="totalF">Total:</label>
-                    <input type="number" step="0.01" id="totalF" required>
-
-                    <label for="metodoF">Método Pago:</label>
-                    <select id="metodoF">
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Tarjeta">Tarjeta</option>
-                        <option value="Transferencia">Transferencia</option>
-                    </select>
-
-                    <button class="btn" type="submit">Crear</button>
-                </form>
+            <!-- Tabla de facturas -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="card-title mb-0">Listado de Facturas</h3>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaFactura">
+                            <i class="fas fa-plus me-2"></i>Nueva Factura
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Reserva</th>
+                                    <th>Fecha Emisión</th>
+                                    <th class="text-end">Total</th>
+                                    <th>Método Pago</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-fact">
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="paginacionFact" class="mt-3"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        let limitFact = 5;
+    <!-- Modal Nueva Factura -->
+    <div class="modal fade" id="modalNuevaFactura" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Factura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCrearFactura" onsubmit="crearFactura(event)">
+                        <div class="mb-3">
+                            <label for="idResF" class="form-label">Reserva:</label>
+                            <select id="idResF" class="form-select" required>
+                                <option value="">Seleccione una reserva</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fechaF" class="form-label">Fecha Emisión:</label>
+                            <input type="date" id="fechaF" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="totalF" class="form-label">Total:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">€</span>
+                                <input type="number" step="0.01" id="totalF" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="metodoF" class="form-label">Método Pago:</label>
+                            <select id="metodoF" class="form-select" required>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                                <option value="Transferencia">Transferencia</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="formCrearFactura" class="btn btn-primary">Crear Factura</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        function listarFacturasPaginado(page = 1) {
-            const reserva = document.getElementById('reservaF').value || '';
-            let url = `../api/facturas.php?page=${page}&limit=${limitFact}`;
-            if (reserva) url += `&reserva=${encodeURIComponent(reserva)}`;
+    <!-- Modal Detalle Factura -->
+    <div class="modal fade" id="modalDetalleFactura" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalle de Factura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Factura #</dt>
+                        <dd class="col-sm-8" id="detalleFacturaId"></dd>
 
-            fetch(url)
-                .then(r => r.json())
-                .then(obj => {
-                    const data = obj.data || [];
-                    const total = obj.total || 0;
-                    const pag = obj.page || 1;
-                    const lim = obj.limit || limitFact;
+                        <dt class="col-sm-4">Reserva #</dt>
+                        <dd class="col-sm-8" id="detalleReservaId"></dd>
 
-                    const tbody = document.getElementById('tabla-fact');
-                    tbody.innerHTML = '';
-                    data.forEach(f => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-          <td>${f.id_factura}</td>
-          <td>${f.id_reserva}</td>
-          <td>${f.fecha_emision}</td>
-          <td>${f.total}</td>
-          <td>${f.metodo_pago}</td>
-          <td>
-            <button class="btn" onclick="eliminarFactura(${f.id_factura})">Eliminar</button>
-          </td>
-        `;
-                        tbody.appendChild(tr);
-                    });
+                        <dt class="col-sm-4">Fecha Emisión</dt>
+                        <dd class="col-sm-8" id="detalleFechaEmision"></dd>
 
-                    renderPagFact(pag, lim, total);
-                })
-                .catch(e => console.error(e));
-        }
+                        <dt class="col-sm-4">Total</dt>
+                        <dd class="col-sm-8" id="detalleTotal"></dd>
 
-        function renderPagFact(page, limit, total) {
-            const divP = document.getElementById('paginacionFact');
-            divP.innerHTML = '';
-            const totalPages = Math.ceil(total / limit);
+                        <dt class="col-sm-4">Método Pago</dt>
+                        <dd class="col-sm-8" id="detalleMetodoPago"></dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="imprimirFactura(document.getElementById('detalleFacturaId').textContent)">
+                        <i class="fas fa-print me-2"></i>Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            if (page > 1) {
-                const bp = document.createElement('button');
-                bp.classList.add('btn');
-                bp.textContent = 'Anterior';
-                bp.onclick = () => listarFacturasPaginado(page - 1);
-                divP.appendChild(bp);
-            }
-
-            const sp = document.createElement('span');
-            sp.style.margin = '0 10px';
-            sp.textContent = `Página ${page} de ${totalPages} (Total: ${total})`;
-            divP.appendChild(sp);
-
-            if (page < totalPages) {
-                const bn = document.createElement('button');
-                bn.classList.add('btn');
-                bn.textContent = 'Siguiente';
-                bn.onclick = () => listarFacturasPaginado(page + 1);
-                divP.appendChild(bn);
-            }
-        }
-
-        function crearFactura() {
-            const id_reserva = document.getElementById('idResF').value;
-            const fecha_emision = document.getElementById('fechaF').value;
-            const total = document.getElementById('totalF').value;
-            const metodo_pago = document.getElementById('metodoF').value;
-
-            fetch('../api/facturas.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({
-                        id_reserva,
-                        fecha_emision,
-                        total,
-                        metodo_pago
-                    })
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) {
-                        alert(d.msg);
-                        listarFacturasPaginado(1);
-                        document.getElementById('idResF').value = '';
-                        document.getElementById('fechaF').value = '';
-                        document.getElementById('totalF').value = '';
-                        document.getElementById('metodoF').value = 'Efectivo';
-                    } else {
-                        alert(d.error || 'No se pudo crear');
-                    }
-                })
-                .catch(e => console.error(e));
-        }
-
-        function eliminarFactura(idF) {
-            if (!confirm('¿Eliminar esta factura?')) return;
-            fetch(`../api/facturas.php?id=${idF}`, {
-                    method: 'DELETE'
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) {
-                        alert(d.msg);
-                        listarFacturasPaginado();
-                    } else {
-                        alert(d.error || 'No se pudo eliminar');
-                    }
-                })
-                .catch(e => console.error(e));
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            listarFacturasPaginado(1);
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/facturas.js"></script>
 </body>
 
 </html>

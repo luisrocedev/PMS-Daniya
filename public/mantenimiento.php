@@ -10,222 +10,244 @@ if (!isset($_SESSION['usuario_id'])) {
 
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Mantenimiento</title>
+    <title>Gestión de Mantenimiento - PMS Daniya Denia</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
     <?php include __DIR__ . '/../partials/navbar.php'; ?>
 
-    <div style="display:flex; margin-top:1rem;">
+    <div class="d-flex" style="margin-top:1rem;">
         <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
-        <div class="main-content">
-            <h2 class="page-title">Incidencias de Mantenimiento</h2>
-
-            <!-- FILTROS -->
-            <div class="card">
-                <h3>Buscar Incidencias</h3>
-                <form onsubmit="event.preventDefault(); listarMantenimientoPaginado(1);">
-                    <label for="searchMant">Descripción:</label>
-                    <input type="text" id="searchMant">
-
-                    <label for="estadoMant">Estado:</label>
-                    <select id="estadoMant">
-                        <option value="">Todos</option>
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="En proceso">En proceso</option>
-                        <option value="Resuelto">Resuelto</option>
-                    </select>
-
-                    <button type="submit" class="btn">Filtrar</button>
-                </form>
+        <div class="main-content container-fluid">
+            <div class="row mb-4">
+                <div class="col">
+                    <h2 class="page-title">Gestión de Mantenimiento</h2>
+                </div>
             </div>
 
-            <!-- TABLA -->
-            <div class="card">
-                <h3>Listado de Incidencias</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Hab</th>
-                            <th>Empleado</th>
-                            <th>Descripción</th>
-                            <th>F.Rep</th>
-                            <th>F.Res</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-mant"></tbody>
-                </table>
-                <div id="paginacionMant" style="margin-top:1rem;"></div>
+            <!-- Resumen de Incidencias -->
+            <div class="row g-4 mb-4">
+                <!-- Pendientes -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock stat-icon text-warning"></i>
+                            <div id="pendientes" class="stat-value">0</div>
+                            <div class="stat-label">Pendientes</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- En Proceso -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-tools stat-icon text-info"></i>
+                            <div id="en-proceso" class="stat-value">0</div>
+                            <div class="stat-label">En Proceso</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resueltas -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle stat-icon text-success"></i>
+                            <div id="resueltas" class="stat-value">0</div>
+                            <div class="stat-label">Resueltas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total -->
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clipboard-list stat-icon text-primary"></i>
+                            <div id="total" class="stat-value">0</div>
+                            <div class="stat-label">Total Incidencias</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- FORM CREACIÓN -->
-            <div class="card">
-                <h3>Nueva Incidencia</h3>
-                <form onsubmit="event.preventDefault(); crearIncidencia();">
-                    <label for="idHab">ID Habitación:</label>
-                    <input type="number" id="idHab" required>
+            <!-- Filtros de búsqueda -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Buscar Incidencias</h3>
+                    <form onsubmit="event.preventDefault(); listarIncidenciasPaginado(1);" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="searchMant" class="form-label">Búsqueda:</label>
+                            <input type="text" id="searchMant" class="form-control" placeholder="Buscar por descripción...">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="estadoMant" class="form-label">Estado:</label>
+                            <select id="estadoMant" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En proceso">En proceso</option>
+                                <option value="Resuelto">Resuelto</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-                    <label for="idEmp">ID Empleado:</label>
-                    <input type="number" id="idEmp" required>
-
-                    <label for="descMant">Descripción:</label>
-                    <input type="text" id="descMant" required>
-
-                    <label for="fRep">Fecha Reporte:</label>
-                    <input type="date" id="fRep" required>
-
-                    <label for="fRes">Fecha Resolución:</label>
-                    <input type="date" id="fRes">
-
-                    <label for="estMant">Estado:</label>
-                    <select id="estMant">
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="En proceso">En proceso</option>
-                        <option value="Resuelto">Resuelto</option>
-                    </select>
-
-                    <button type="submit" class="btn">Crear</button>
-                </form>
+            <!-- Tabla de incidencias -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="card-title mb-0">Listado de Incidencias</h3>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaIncidencia">
+                            <i class="fas fa-plus me-2"></i>Nueva Incidencia
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Habitación</th>
+                                    <th>Empleado</th>
+                                    <th>Descripción</th>
+                                    <th>F. Reporte</th>
+                                    <th>F. Resolución</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-mant">
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="paginacionMant" class="mt-3"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        let limitMant = 5;
+    <!-- Modal Nueva Incidencia -->
+    <div class="modal fade" id="modalNuevaIncidencia" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Incidencia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCrearIncidencia" onsubmit="crearIncidencia(event)">
+                        <div class="mb-3">
+                            <label for="idHab" class="form-label">Habitación:</label>
+                            <select id="idHab" class="form-select" required>
+                                <option value="">Seleccione una habitación</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="idEmp" class="form-label">Empleado:</label>
+                            <select id="idEmp" class="form-select" required>
+                                <option value="">Seleccione un empleado</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descMant" class="form-label">Descripción:</label>
+                            <textarea id="descMant" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fRep" class="form-label">Fecha Reporte:</label>
+                            <input type="date" id="fRep" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fRes" class="form-label">Fecha Resolución:</label>
+                            <input type="date" id="fRes" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="estMant" class="form-label">Estado:</label>
+                            <select id="estMant" class="form-select" required>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En proceso">En proceso</option>
+                                <option value="Resuelto">Resuelto</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="formCrearIncidencia" class="btn btn-primary">Crear Incidencia</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        function listarMantenimientoPaginado(page = 1) {
-            const search = document.getElementById('searchMant').value || '';
-            const estado = document.getElementById('estadoMant').value || '';
+    <!-- Modal Editar Incidencia -->
+    <div class="modal fade" id="modalEditarIncidencia" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Incidencia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarIncidencia" onsubmit="editarIncidencia(event)">
+                        <input type="hidden" id="id_incidencia_editar">
+                        <div class="mb-3">
+                            <label for="id_habitacion_editar" class="form-label">Habitación:</label>
+                            <select id="id_habitacion_editar" class="form-select" required>
+                                <option value="">Seleccione una habitación</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_empleado_editar" class="form-label">Empleado:</label>
+                            <select id="id_empleado_editar" class="form-select" required>
+                                <option value="">Seleccione un empleado</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion_editar" class="form-label">Descripción:</label>
+                            <textarea id="descripcion_editar" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fecha_reporte_editar" class="form-label">Fecha Reporte:</label>
+                            <input type="date" id="fecha_reporte_editar" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fecha_resolucion_editar" class="form-label">Fecha Resolución:</label>
+                            <input type="date" id="fecha_resolucion_editar" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="estado_editar" class="form-label">Estado:</label>
+                            <select id="estado_editar" class="form-select" required>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En proceso">En proceso</option>
+                                <option value="Resuelto">Resuelto</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="formEditarIncidencia" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            let url = `../api/mantenimiento.php?page=${page}&limit=${limitMant}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
-            if (estado) url += `&estado=${encodeURIComponent(estado)}`;
-
-            fetch(url)
-                .then(r => r.json())
-                .then(obj => {
-                    const data = obj.data || [];
-                    const total = obj.total || 0;
-                    const pag = obj.page || 1;
-                    const lim = obj.limit || limitMant;
-
-                    const tbody = document.getElementById('tabla-mant');
-                    tbody.innerHTML = '';
-                    data.forEach(m => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-          <td>${m.id_incidencia}</td>
-          <td>${m.id_habitacion}</td>
-          <td>${m.id_empleado}</td>
-          <td>${m.descripcion}</td>
-          <td>${m.fecha_reporte}</td>
-          <td>${m.fecha_resolucion||''}</td>
-          <td>${m.estado}</td>
-          <td><button class="btn" onclick="eliminarIncidencia(${m.id_incidencia})">Eliminar</button></td>
-        `;
-                        tbody.appendChild(tr);
-                    });
-
-                    renderPagMant(pag, lim, total);
-                })
-                .catch(e => console.error(e));
-        }
-
-        function renderPagMant(page, limit, total) {
-            const divPag = document.getElementById('paginacionMant');
-            divPag.innerHTML = '';
-            const totalPages = Math.ceil(total / limit);
-
-            if (page > 1) {
-                const bPrev = document.createElement('button');
-                bPrev.classList.add('btn');
-                bPrev.textContent = 'Anterior';
-                bPrev.onclick = () => listarMantenimientoPaginado(page - 1);
-                divPag.appendChild(bPrev);
-            }
-
-            const sp = document.createElement('span');
-            sp.style.margin = '0 10px';
-            sp.textContent = `Página ${page} de ${totalPages} (Total: ${total})`;
-            divPag.appendChild(sp);
-
-            if (page < totalPages) {
-                const bNext = document.createElement('button');
-                bNext.classList.add('btn');
-                bNext.textContent = 'Siguiente';
-                bNext.onclick = () => listarMantenimientoPaginado(page + 1);
-                divPag.appendChild(bNext);
-            }
-        }
-
-        function crearIncidencia() {
-            const id_habitacion = document.getElementById('idHab').value;
-            const id_empleado = document.getElementById('idEmp').value;
-            const descripcion = document.getElementById('descMant').value;
-            const fecha_reporte = document.getElementById('fRep').value;
-            const fecha_resolucion = document.getElementById('fRes').value;
-            const estado = document.getElementById('estMant').value;
-
-            fetch('../api/mantenimiento.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({
-                        id_habitacion,
-                        id_empleado,
-                        descripcion,
-                        fecha_reporte,
-                        fecha_resolucion,
-                        estado
-                    })
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) {
-                        alert(d.msg);
-                        listarMantenimientoPaginado(1);
-                        // clean
-                        document.getElementById('idHab').value = '';
-                        document.getElementById('idEmp').value = '';
-                        document.getElementById('descMant').value = '';
-                        document.getElementById('fRep').value = '';
-                        document.getElementById('fRes').value = '';
-                        document.getElementById('estMant').value = 'Pendiente';
-                    } else {
-                        alert(d.error || 'No se pudo crear');
-                    }
-                })
-                .catch(e => console.error(e));
-        }
-
-        function eliminarIncidencia(idI) {
-            if (!confirm('¿Eliminar esta incidencia?')) return;
-            fetch(`../api/mantenimiento.php?id=${idI}`, {
-                    method: 'DELETE'
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) {
-                        alert(d.msg);
-                        listarMantenimientoPaginado();
-                    } else {
-                        alert(d.error || 'No se pudo eliminar');
-                    }
-                })
-                .catch(e => console.error(e));
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            listarMantenimientoPaginado(1);
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/mantenimientos.js"></script>
 </body>
 
 </html>
