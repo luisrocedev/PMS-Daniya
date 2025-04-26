@@ -37,9 +37,13 @@ function initializeApp() {
         });
     }
     
+    // Cargar estadísticas iniciales
+    actualizarEstadisticas();
+    
     // Auto-actualización cada 5 minutos
     setInterval(() => {
         listarIncidenciasPaginado(1);
+        actualizarEstadisticas();
     }, 300000);
 }
 
@@ -163,6 +167,10 @@ function crearIncidencia(e) {
             document.getElementById('formCrearIncidencia').reset();
             document.getElementById('fRep').valueAsDate = new Date();
             listarIncidenciasPaginado(1);
+            actualizarEstadisticas(); // Actualizar estadísticas
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaIncidencia'));
+            if (modal) modal.hide();
         } else {
             mostrarAlerta(data.error || 'Error al crear la incidencia', 'danger');
         }
@@ -198,6 +206,7 @@ function editarIncidencia(e) {
             mostrarAlerta('Incidencia actualizada con éxito', 'success');
             cerrarModalEditar();
             listarIncidenciasPaginado(1);
+            actualizarEstadisticas(); // Actualizar estadísticas
         } else {
             mostrarAlerta(data.error || 'Error al actualizar la incidencia', 'danger');
         }
@@ -217,6 +226,7 @@ function confirmarEliminar(id) {
                 if (data.success) {
                     mostrarAlerta('Incidencia eliminada con éxito', 'success');
                     listarIncidenciasPaginado(1);
+                    actualizarEstadisticas(); // Actualizar estadísticas
                 } else {
                     mostrarAlerta(data.error || 'Error al eliminar la incidencia', 'danger');
                 }
@@ -416,4 +426,45 @@ async function cargarSelectEmpleadosConSeleccion(idEmpleado) {
 function cerrarModalEditar() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarIncidencia'));
     if (modal) modal.hide();
+}
+
+// Función para actualizar los contadores de estadísticas
+async function actualizarEstadisticas() {
+    try {
+        const response = await fetch('../api/mantenimiento.php');
+        const data = await response.json();
+        const incidencias = Array.isArray(data) ? data : (data.data || []);
+        
+        const stats = {
+            pendientes: 0,
+            'en-proceso': 0,
+            resueltas: 0,
+            total: incidencias.length
+        };
+
+        // Contar incidencias por estado
+        incidencias.forEach(inc => {
+            switch(inc.estado) {
+                case 'Pendiente':
+                    stats.pendientes++;
+                    break;
+                case 'En proceso':
+                    stats['en-proceso']++;
+                    break;
+                case 'Resuelto':
+                    stats.resueltas++;
+                    break;
+            }
+        });
+
+        // Actualizar los contadores en el DOM
+        Object.entries(stats).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+    } catch (error) {
+        console.error('Error al actualizar estadísticas:', error);
+    }
 }
