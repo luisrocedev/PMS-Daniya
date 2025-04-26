@@ -16,273 +16,94 @@ switch ($action) {
     case 'stats_generales':
         // Estadísticas del mes actual
         $mes_actual = date('Y-m');
-
-        // Ingresos del mes
-        $sql_ingresos = "SELECT SUM(total) as total FROM facturas 
-                        WHERE DATE_FORMAT(fecha_emision, '%Y-%m') = :mes";
-        $stmt = $pdo->prepare($sql_ingresos);
+        $stmt = $pdo->prepare("SELECT SUM(total) as total FROM facturas WHERE DATE_FORMAT(fecha_emision, '%Y-%m') = :mes");
         $stmt->execute([':mes' => $mes_actual]);
         $ingresos = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
         // Ocupación media
-        $sql_ocupacion = "SELECT 
-            ROUND(AVG(
-                (SELECT COUNT(*) FROM reservas r2 
-                WHERE r2.estado_reserva IN ('CheckIn', 'Confirmada')
-                AND DATE(r2.fecha_entrada) <= DATE(r1.fecha)
-                AND DATE(r2.fecha_salida) > DATE(r1.fecha))
-            / (SELECT COUNT(*) FROM habitaciones) * 100
-            ), 2) as ocupacion_media
-            FROM (
-                SELECT CURDATE() - INTERVAL n DAY as fecha
-                FROM (
-                    SELECT @row := @row + 1 as n
-                    FROM (SELECT 0 UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) t1,
-                        (SELECT 0 UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) t2,
-                        (SELECT @row := -1) t0
-                    LIMIT 30
-                ) numbers
-            ) dates";
-        $ocupacion = $pdo->query($sql_ocupacion)->fetch(PDO::FETCH_ASSOC)['ocupacion_media'] ?? 0;
+        $stmt = $pdo->query("SELECT ROUND(AVG(ocupacion), 2) as media FROM (
+            SELECT COUNT(*) * 100.0 / (SELECT COUNT(*) FROM habitaciones) as ocupacion
+            FROM reservas r
+            WHERE r.estado_reserva IN ('CheckIn', 'Confirmada')
+            AND MONTH(r.fecha_entrada) = MONTH(CURRENT_DATE)
+            GROUP BY DATE(r.fecha_entrada)
+        ) t");
+        $ocupacion = $stmt->fetch(PDO::FETCH_ASSOC)['media'] ?? 0;
 
-        // Reservas del mes
-        $sql_reservas = "SELECT COUNT(*) as total FROM reservas 
-                        WHERE DATE_FORMAT(fecha_entrada, '%Y-%m') = :mes";
-        $stmt = $pdo->prepare($sql_reservas);
+        // Total reservas del mes
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM reservas WHERE DATE_FORMAT(fecha_entrada, '%Y-%m') = :mes");
         $stmt->execute([':mes' => $mes_actual]);
         $reservas = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
         echo json_encode([
-            'ingresos_mes' => $ingresos,
-            'ocupacion_media' => $ocupacion,
+            'ingresos_mes' => number_format($ingresos, 2),
+            'ocupacion_media' => number_format($ocupacion, 1),
             'reservas_mes' => $reservas
         ]);
         break;
 
-    case 'ingresos_diarios':
-    case 'ingresos_daily':
-        // Ingresos diarios últimos 30 días
-        $sql = "SELECT 
-            DATE(fecha_emision) as fecha,
-            SUM(total) as total
-            FROM facturas
-            WHERE fecha_emision >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
-            GROUP BY DATE(fecha_emision)
-            ORDER BY fecha";
+    case 'ingresos_mensuales':
+        try {
+            $year = $_GET['year'] ?? date('Y');
+            $export = $_GET['export'] ?? '';
 
-        $result = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+            $sql = "SELECT 
+                    MONTH(fecha_emision) as mes,
+                    ROUND(SUM(total), 2) as total_mes
+                    FROM facturas
+                    WHERE YEAR(fecha_emision) = :year
+                    GROUP BY MONTH(fecha_emision)
+                    ORDER BY mes";
 
-        $labels = array_map(function ($row) {
-            return date('d/m', strtotime($row['fecha']));
-        }, $result);
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':year' => $year]);
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $valores = array_column($result, 'total');
+            // Asegurarnos de que tenemos los 12 meses con valores
+            $data = [];
+            for ($i = 1; $i <= 12; $i++) {
+                $encontrado = false;
+                foreach ($result as $row) {
+                    if ((int)$row['mes'] === $i) {
+                        $data[] = [
+                            'mes' => $i,
+                            'total_mes' => (float)$row['total_mes']
+                        ];
+                        $encontrado = true;
+                        break;
+                    }
+                }
+                if (!$encontrado) {
+                    $data[] = ['mes' => $i, 'total_mes' => 0];
+                }
+            }
 
-        echo json_encode(['labels' => $labels, 'valores' => $valores]);
-        break;
+            if ($export) {
+                // Manejar exportaciones si se implementan
+                switch ($export) {
+                    case 'csv':
+                        header('Content-Type: text/csv');
+                        header('Content-Disposition: attachment; filename="ingresos_mensuales.csv"');
+                        $output = fopen('php://output', 'w');
+                        fputcsv($output, ['Mes', 'Total']);
+                        foreach ($data as $row) {
+                            $nombreMes = date('F', mktime(0, 0, 0, $row['mes'], 1));
+                            fputcsv($output, [$nombreMes, $row['total_mes']]);
+                        }
+                        fclose($output);
+                        exit;
+                        // Implementar otros formatos según sea necesario
+                }
+            }
 
-    case 'ingresos_weekly':
-        // Ingresos semanales últimas 12 semanas
-        $sql = "SELECT 
-            YEARWEEK(fecha_emision, 1) as semana,
-            SUM(total) as total
-            FROM facturas
-            WHERE fecha_emision >= DATE_SUB(CURRENT_DATE, INTERVAL 12 WEEK)
-            GROUP BY YEARWEEK(fecha_emision, 1)
-            ORDER BY semana";
-
-        $result = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-
-        $labels = array_map(function ($row) {
-            return 'Semana ' . substr($row['semana'], -2);
-        }, $result);
-
-        $valores = array_column($result, 'total');
-
-        echo json_encode(['labels' => $labels, 'valores' => $valores]);
-        break;
-
-    case 'ingresos_monthly':
-        $year = $_GET['year'] ?? date('Y');
-        $sql = "SELECT 
-            MONTH(fecha_emision) as mes,
-            SUM(total) as total
-            FROM facturas
-            WHERE YEAR(fecha_emision) = :year
-            GROUP BY MONTH(fecha_emision)
-            ORDER BY mes";
-
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([':year' => $year]);
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $labels = array_map(function ($row) {
-            return date('F', mktime(0, 0, 0, $row['mes'], 1));
-        }, $result);
-
-        $valores = array_column($result, 'total');
-
-        echo json_encode(['labels' => $labels, 'valores' => $valores]);
-        break;
-
-    case 'ocupacion':
-        $month = $_GET['month'] ?? date('Y-m');
-
-        // Datos de ocupación diaria
-        $sql_ocupacion = "SELECT 
-            DATE_FORMAT(fecha, '%d/%m') as fecha,
-            ROUND(
-                (SELECT COUNT(*) FROM reservas r 
-                WHERE r.estado_reserva IN ('CheckIn', 'Confirmada')
-                AND DATE(r.fecha_entrada) <= fecha
-                AND DATE(r.fecha_salida) > fecha)
-            / (SELECT COUNT(*) FROM habitaciones) * 100
-            , 2) as porcentaje
-            FROM (
-                SELECT DATE(:month_start + INTERVAL n DAY) as fecha
-                FROM (
-                    SELECT @row := @row + 1 as n
-                    FROM (SELECT 0 UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) t1,
-                    (SELECT 0 UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) t2,
-                    (SELECT @row := -1) t0
-                    LIMIT 31
-                ) numbers
-                WHERE DATE(:month_start + INTERVAL n DAY) <= LAST_DAY(:month_start)
-            ) dates";
-
-        $stmt = $pdo->prepare($sql_ocupacion);
-        $stmt->execute([':month_start' => $month . '-01']);
-        $ocupacion = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Estadísticas por tipo de habitación
-        $sql_tipos = "SELECT 
-            th.nombre,
-            COUNT(h.id_habitacion) as disponibles,
-            (SELECT COUNT(*) FROM reservas r 
-             WHERE r.id_habitacion = h.id_habitacion 
-             AND r.estado_reserva IN ('CheckIn', 'Confirmada')
-             AND DATE_FORMAT(r.fecha_entrada, '%Y-%m') = :month) as ocupadas,
-            ROUND(
-                (SELECT COUNT(*) FROM reservas r 
-                 WHERE r.id_habitacion = h.id_habitacion 
-                 AND r.estado_reserva IN ('CheckIn', 'Confirmada')
-                 AND DATE_FORMAT(r.fecha_entrada, '%Y-%m') = :month)
-                / COUNT(h.id_habitacion) * 100
-            , 2) as porcentaje,
-            ROUND(AVG(r2.total), 2) as ingreso_medio
-            FROM habitaciones h
-            JOIN tipos_habitacion th ON h.id_tipo = th.id_tipo
-            LEFT JOIN reservas r2 ON h.id_habitacion = r2.id_habitacion 
-                AND DATE_FORMAT(r2.fecha_entrada, '%Y-%m') = :month
-            GROUP BY th.id_tipo";
-
-        $stmt = $pdo->prepare($sql_tipos);
-        $stmt->execute([':month' => $month]);
-        $tipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'dates' => array_column($ocupacion, 'fecha'),
-            'ocupacion' => array_column($ocupacion, 'porcentaje'),
-            'roomTypes' => $tipos
-        ]);
-        break;
-
-    case 'reservas':
-        $metric = $_GET['metric'] ?? 'status';
-        $data = [];
-
-        switch ($metric) {
-            case 'status':
-                $sql = "SELECT 
-                    estado_reserva as label,
-                    COUNT(*) as valor
-                    FROM reservas
-                    WHERE fecha_entrada >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
-                    GROUP BY estado_reserva";
-                break;
-
-            case 'channel':
-                $sql = "SELECT 
-                    canal_reserva as label,
-                    COUNT(*) as valor
-                    FROM reservas
-                    WHERE fecha_entrada >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
-                    GROUP BY canal_reserva";
-                break;
-
-            case 'cancelled':
-                $sql = "SELECT 
-                    DATE_FORMAT(fecha_cancelacion, '%d/%m') as label,
-                    COUNT(*) as valor
-                    FROM reservas
-                    WHERE estado_reserva = 'Cancelada'
-                    AND fecha_cancelacion >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
-                    GROUP BY DATE(fecha_cancelacion)";
-                break;
-        }
-
-        $result = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-
-        // Tendencias de reserva
-        $sql_trends = "SELECT 
-            DATE_FORMAT(fecha_entrada, '%d/%m') as fecha,
-            COUNT(*) as total
-            FROM reservas
-            WHERE fecha_entrada >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
-            GROUP BY DATE(fecha_entrada)
-            ORDER BY fecha_entrada";
-
-        $trends = $pdo->query($sql_trends)->fetchAll(PDO::FETCH_ASSOC);
-
-        // Estancia media por tipo de habitación
-        $sql_stay = "SELECT 
-            th.nombre as label,
-            ROUND(AVG(DATEDIFF(r.fecha_salida, r.fecha_entrada)), 1) as valor
-            FROM reservas r
-            JOIN habitaciones h ON r.id_habitacion = h.id_habitacion
-            JOIN tipos_habitacion th ON h.id_tipo = th.id_tipo
-            WHERE r.fecha_entrada >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
-            GROUP BY th.id_tipo";
-
-        $avgStay = $pdo->query($sql_stay)->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'labels' => array_column($result, 'label'),
-            'valores' => array_column($result, 'valor'),
-            'trends' => [
-                'labels' => array_column($trends, 'fecha'),
-                'valores' => array_column($trends, 'total')
-            ],
-            'avgStay' => [
-                'labels' => array_column($avgStay, 'label'),
-                'valores' => array_column($avgStay, 'valor')
-            ]
-        ]);
-        break;
-
-    case 'export_financial':
-    case 'export_occupancy':
-    case 'export_reservations':
-        $format = $_GET['format'] ?? 'pdf';
-
-        // Implementar exportación según el formato
-        switch ($format) {
-            case 'pdf':
-                require_once __DIR__ . '/../vendor/tecnickcom/tcpdf/tcpdf.php';
-                // Implementar generación de PDF
-                break;
-
-            case 'excel':
-                require_once __DIR__ . '/../vendor/phpoffice/phpspreadsheet/src/Bootstrap.php';
-                // Implementar generación de Excel
-                break;
-
-            case 'csv':
-                // Implementar exportación CSV
-                break;
+            echo json_encode($data);
+        } catch (Exception $e) {
+            error_log("Error en ingresos_mensuales: " . $e->getMessage());
+            echo json_encode(['error' => 'Error al procesar los datos de ingresos mensuales']);
         }
         break;
 
     default:
         echo json_encode(['error' => 'Acción no válida']);
+        break;
 }
