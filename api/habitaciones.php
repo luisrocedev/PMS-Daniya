@@ -31,6 +31,16 @@ try {
      */
 
     if ($method === 'GET') {
+        // Si se solicitan solo los tipos de habitación
+        if (isset($_GET['tipos']) && $_GET['tipos'] === 'true') {
+            $sql = "SELECT DISTINCT tipo_habitacion as tipo FROM habitaciones ORDER BY tipo_habitacion";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+            $tipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode($tipos);
+            exit;
+        }
+
         $search = $_GET['search'] ?? '';
         $estado = $_GET['estado'] ?? '';
         $page   = isset($_GET['page']) ? intval($_GET['page']) : 1;

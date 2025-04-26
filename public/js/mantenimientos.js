@@ -7,12 +7,35 @@ document.addEventListener('DOMContentLoaded', () => {
 const limitePorPagina = 10;
 
 function initializeApp() {
+    // Cargar datos iniciales
     listarIncidenciasPaginado(1);
+    
+    // Cargar selectores dinámicamente
     cargarSelectHabitaciones();
     cargarSelectEmpleados();
     
     // Inicializar campos de fecha
-    document.getElementById('fRep').valueAsDate = new Date();
+    const fechaReporte = document.getElementById('fRep');
+    if (fechaReporte) {
+        fechaReporte.valueAsDate = new Date();
+    }
+    
+    // Configurar eventos para los modales
+    const modalNueva = document.getElementById('modalNuevaIncidencia');
+    if (modalNueva) {
+        modalNueva.addEventListener('show.bs.modal', () => {
+            cargarSelectHabitaciones();
+            cargarSelectEmpleados();
+        });
+    }
+
+    const modalEditar = document.getElementById('modalEditarIncidencia');
+    if (modalEditar) {
+        modalEditar.addEventListener('show.bs.modal', () => {
+            cargarSelectHabitaciones();
+            cargarSelectEmpleados();
+        });
+    }
     
     // Auto-actualización cada 5 minutos
     setInterval(() => {
@@ -242,62 +265,152 @@ function mostrarAlerta(mensaje, tipo) {
 function cargarSelectHabitaciones() {
     fetch('../api/habitaciones.php')
         .then(r => r.json())
-        .then(data => {
-            const habitaciones = Array.isArray(data) ? data : [];
+        .then(response => {
+            // Manejar tanto array directo como objeto con data
+            const habitaciones = Array.isArray(response) ? response : (response.data || []);
             const selectHab = document.getElementById('idHab');
             const selectHabEdit = document.getElementById('id_habitacion_editar');
             
-            const options = habitaciones.map(h => 
-                `<option value="${h.id_habitacion}">Habitación ${h.numero_habitacion}</option>`
-            ).join('');
+            const options = habitaciones
+                .filter(h => h.estado !== 'Ocupada') // Solo mostrar habitaciones no ocupadas
+                .map(h => `<option value="${h.id_habitacion}">Habitación ${h.numero_habitacion} (${h.tipo_habitacion})</option>`)
+                .join('');
             
             if (selectHab) selectHab.innerHTML = '<option value="">Seleccione una habitación</option>' + options;
             if (selectHabEdit) selectHabEdit.innerHTML = '<option value="">Seleccione una habitación</option>' + options;
+        })
+        .catch(error => {
+            console.error('Error al cargar habitaciones:', error);
+            mostrarAlerta('Error al cargar las habitaciones', 'danger');
         });
 }
 
 function cargarSelectEmpleados() {
     fetch('../api/empleados.php')
         .then(r => r.json())
-        .then(data => {
-            const empleados = Array.isArray(data) ? data : [];
+        .then(response => {
+            // Manejar tanto array directo como objeto con data
+            const empleados = Array.isArray(response) ? response : (response.data || []);
             const selectEmp = document.getElementById('idEmp');
             const selectEmpEdit = document.getElementById('id_empleado_editar');
             
-            const options = empleados.map(e => 
-                `<option value="${e.id_empleado}">${e.nombre} ${e.apellidos}</option>`
-            ).join('');
+            const options = empleados
+                .filter(e => e.activo !== false) // Solo mostrar empleados activos si existe el campo
+                .map(e => `<option value="${e.id_empleado}">${e.nombre} ${e.apellidos} - ${e.departamento || 'Mantenimiento'}</option>`)
+                .join('');
             
             if (selectEmp) selectEmp.innerHTML = '<option value="">Seleccione un empleado</option>' + options;
             if (selectEmpEdit) selectEmpEdit.innerHTML = '<option value="">Seleccione un empleado</option>' + options;
+        })
+        .catch(error => {
+            console.error('Error al cargar empleados:', error);
+            mostrarAlerta('Error al cargar los empleados', 'danger');
         });
 }
 
 // Funciones de modal
-function abrirModalEditar(id) {
-    fetch(`../api/mantenimiento.php?id=${id}`)
-        .then(r => r.json())
-        .then(inc => {
-            if (!inc.id_incidencia) {
-                mostrarAlerta('No se encontró la incidencia', 'danger');
-                return;
-            }
+async function abrirModalEditar(id) {
+    try {
+        // Mostrar indicador de carga
+        mostrarAlerta('Cargando datos...', 'info');
+
+        // Primero cargamos los datos de la incidencia
+        const response = await fetch(`../api/mantenimiento.php?id=${id}`);
+        const inc = await response.json();
+
+        if (!inc.id_incidencia) {
+            mostrarAlerta('No se encontró la incidencia', 'danger');
+            return;
+        }
+
+        // Mostrar el modal primero para que los selectores se inicialicen correctamente
+        const modal = new bootstrap.Modal(document.getElementById('modalEditarIncidencia'));
+        modal.show();
+
+        // Pequeña pausa para asegurar que el modal está completamente visible
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Cargar y establecer los valores
+        document.getElementById('id_incidencia_editar').value = inc.id_incidencia;
+        document.getElementById('descripcion_editar').value = inc.descripcion;
+        document.getElementById('fecha_reporte_editar').value = inc.fecha_reporte;
+        document.getElementById('fecha_resolucion_editar').value = inc.fecha_resolucion || '';
+        document.getElementById('estado_editar').value = inc.estado;
+
+        // Cargar los selectores
+        await Promise.all([
+            cargarSelectHabitacionesConSeleccion(inc.id_habitacion),
+            cargarSelectEmpleadosConSeleccion(inc.id_empleado)
+        ]);
+
+        // Asegurarnos de que los valores están seleccionados
+        setTimeout(() => {
+            const selectHab = document.getElementById('id_habitacion_editar');
+            const selectEmp = document.getElementById('id_empleado_editar');
+            if (selectHab) selectHab.value = inc.id_habitacion;
+            if (selectEmp) selectEmp.value = inc.id_empleado;
+        }, 100);
+
+    } catch (error) {
+        console.error('Error al abrir modal de edición:', error);
+        mostrarAlerta('Error al cargar los datos de la incidencia', 'danger');
+    }
+}
+
+// Función para cargar habitaciones y preseleccionar una
+async function cargarSelectHabitacionesConSeleccion(idHabitacion) {
+    try {
+        const response = await fetch('../api/habitaciones.php');
+        const data = await response.json();
+        const habitaciones = Array.isArray(data) ? data : (data.data || []);
+        const selectHabEdit = document.getElementById('id_habitacion_editar');
             
-            document.getElementById('id_incidencia_editar').value = inc.id_incidencia;
-            document.getElementById('id_habitacion_editar').value = inc.id_habitacion;
-            document.getElementById('id_empleado_editar').value = inc.id_empleado;
-            document.getElementById('descripcion_editar').value = inc.descripcion;
-            document.getElementById('fecha_reporte_editar').value = inc.fecha_reporte;
-            document.getElementById('fecha_resolucion_editar').value = inc.fecha_resolucion || '';
-            document.getElementById('estado_editar').value = inc.estado;
+        if (selectHabEdit) {
+            // Convertir a número para comparación
+            const idHabNum = parseInt(idHabitacion);
+            const options = habitaciones.map(h => 
+                `<option value="${h.id_habitacion}" ${parseInt(h.id_habitacion) === idHabNum ? 'selected' : ''}>
+                    Habitación ${h.numero_habitacion} (${h.tipo_habitacion})
+                </option>`
+            ).join('');
             
-            const modal = new bootstrap.Modal(document.getElementById('modalEditarIncidencia'));
-            modal.show();
-        })
-        .catch(error => {
-            console.error('Error al abrir modal de edición:', error);
-            mostrarAlerta('Error al cargar los datos de la incidencia', 'danger');
-        });
+            selectHabEdit.innerHTML = '<option value="">Seleccione una habitación</option>' + options;
+            // Forzar la selección
+            selectHabEdit.value = idHabitacion;
+        }
+    } catch (error) {
+        console.error('Error al cargar habitaciones:', error);
+        mostrarAlerta('Error al cargar las habitaciones', 'danger');
+    }
+}
+
+// Función para cargar empleados y preseleccionar uno
+async function cargarSelectEmpleadosConSeleccion(idEmpleado) {
+    try {
+        const response = await fetch('../api/empleados.php');
+        const data = await response.json();
+        const empleados = Array.isArray(data) ? data : (data.data || []);
+        const selectEmpEdit = document.getElementById('id_empleado_editar');
+            
+        if (selectEmpEdit) {
+            // Convertir a número para comparación
+            const idEmpNum = parseInt(idEmpleado);
+            const options = empleados
+                .filter(e => e.activo !== false)
+                .map(e => 
+                    `<option value="${e.id_empleado}" ${parseInt(e.id_empleado) === idEmpNum ? 'selected' : ''}>
+                        ${e.nombre} ${e.apellidos} - ${e.departamento || 'Mantenimiento'}
+                    </option>`
+                ).join('');
+            
+            selectEmpEdit.innerHTML = '<option value="">Seleccione un empleado</option>' + options;
+            // Forzar la selección
+            selectEmpEdit.value = idEmpleado;
+        }
+    } catch (error) {
+        console.error('Error al cargar empleados:', error);
+        mostrarAlerta('Error al cargar los empleados', 'danger');
+    }
 }
 
 function cerrarModalEditar() {

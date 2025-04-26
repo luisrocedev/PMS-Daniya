@@ -22,7 +22,7 @@ class Database
             $dbname = $_ENV['DB_NAME'] ?? 'pms_daniya_denia';
             $charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
             $user = $_ENV['DB_USER'] ?? 'root';
-            $pass = $_ENV['DB_PASS'] ?? '';
+            $pass = $_ENV['DB_PASS'] ?? 'root';
 
             // Construir DSN para PDO
             $dsn = "mysql:host={$host};dbname={$dbname};charset={$charset}";

@@ -140,7 +140,7 @@ if (!isset($_SESSION['usuario_id'])) {
                     if (res.error) return alert(res.error);
                     formTurno.reset();
                     id_turno.value = '';
-                    form_title.textContent = 'Nuevo turno';
+                    document.getElementById('form-title').textContent = 'Nuevo turno';
                     listar();
                 });
         }
@@ -155,7 +155,7 @@ if (!isset($_SESSION['usuario_id'])) {
                     hora_inicio.value = t.hora_inicio;
                     hora_fin.value = t.hora_fin;
                     descanso_min.value = t.descanso_min;
-                    form_title.textContent = 'Editar turno';
+                    document.getElementById('form-title').textContent = 'Editar turno';
                 });
         }
 
