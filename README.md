@@ -117,7 +117,7 @@ Para asegurar la integridad de los datos, se ha configurado una tarea cron en ma
    ```
 3. Añade la siguiente línea al final del archivo:
    ```cron
-   0 2 */3 * * /bin/bash /Applications/MAMP/htdocs/GitHub/PMS-Daniya/backup.sh
+   0 2 */3 * * /bin/bash /ejemplo/ejemplo/ejemplo/ejemplo/ejemplo-Daniya/backup.sh
    ```
 4. Guarda y cierra el editor.
 
