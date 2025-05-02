@@ -1,229 +1,235 @@
-# Aprendizaje sobre el Proyecto PMS-Daniya
+---
+marp: true
+theme: gaia
+paginate: true
+---
 
-## Programación
+# 🗂️ Aprendizaje sobre el Proyecto PMS-Daniya
 
-### 1. Elementos fundamentales
+---
 
-Nuestro código utiliza variables (por ejemplo, `$usuario`, `$password`), constantes (`define('DB_HOST', ...)`), operadores aritméticos (`+`, `-`), lógicos (`&&`, `||`) y de comparación (`==`, `!=`). Los tipos de datos principales son cadenas (string), números (int, float), booleanos y arrays.
+# Programación
 
+## 1. Elementos fundamentales del código
+- Uso de variables y constantes en PHP.
+- Tipos: string, int, float, boolean, array, objeto.
+- Ejemplo:
 ```php
-$nombre = "Juan";
-$edad = 25;
-$esAdmin = true;
-$usuarios = ["Juan", "Ana", "Luis"];
+const DB_HOST = 'localhost';
+$clientes = array();
 ```
 
-### 2. Estructuras de control
+---
 
-Usamos estructuras de selección (`if`, `else`, `switch`) para tomar decisiones y bucles (`for`, `foreach`, `while`) para repetir acciones. Por ejemplo, para mostrar todos los empleados:
-
+## 2. Estructuras de control
+- Condicionales: if, else, switch.
+- Bucles: for, foreach, while.
+- Ejemplo:
 ```php
-foreach ($empleados as $empleado) {
-    echo $empleado["nombre"];
+foreach ($clientes as $cliente) {
+  // ...
 }
 ```
 
-### 3. Control de excepciones y gestión de errores
+---
 
-En PHP, usamos `try-catch` para capturar excepciones, especialmente al conectar con la base de datos o enviar emails. También comprobamos errores con condicionales y mostramos mensajes personalizados.
+## 3. Control de excepciones y gestión de errores
+- Uso de try-catch en PHP para manejar errores de base de datos y lógica.
 
-```php
-try {
-    $db = new PDO($dsn, $user, $pass);
-} catch (PDOException $e) {
-    echo "Error de conexión: " . $e->getMessage();
+---
+
+## 4. Documentación del código
+- Comentarios en PHP y archivos markdown (README, aprendizaje, guion).
+
+---
+
+## 5. Paradigma aplicado
+- Programación orientada a objetos y modular.
+- Separación de lógica en controladores, modelos y vistas.
+
+---
+
+## 6. Clases y objetos principales
+- Clases: Cliente, Reserva, Habitacion, Factura.
+- Uso de objetos y arrays para gestionar datos.
+
+---
+
+## 7. Conceptos avanzados
+- Conexión a MySQL con PDO o MySQLi.
+- Generación de informes y backups automáticos.
+- Modularidad y reutilización de funciones.
+
+---
+
+## 8. Gestión de información y archivos
+- Uso de base de datos MySQL.
+- Exportación/importación de datos en SQL y JSON.
+
+---
+
+## 9. Estructuras de datos utilizadas
+- Arrays y objetos para clientes, reservas, habitaciones y facturas.
+
+---
+
+## 10. Técnicas avanzadas
+- Scripts de backup en bash y PHP.
+- Validación de formularios y gestión de sesiones.
+
+---
+
+# Sistemas Informáticos
+
+## 1. Características del hardware
+- Desarrollo y pruebas en MacBook (macOS), compatible con cualquier servidor PHP.
+
+---
+
+## 2. Sistema operativo
+- Multiplataforma: macOS, Linux, Windows (con XAMPP/MAMP/WAMP).
+
+---
+
+## 3. Configuración de redes
+- Acceso por HTTP en red local o internet.
+
+---
+
+## 4. Copias de seguridad
+- Scripts automáticos de backup y uso de Git para control de versiones.
+
+---
+
+## 5. Integridad y seguridad de datos
+- Validación de entradas y gestión de sesiones.
+- Uso de permisos y autenticación básica.
+
+---
+
+## 6. Usuarios, permisos y accesos
+- Gestión de usuarios y roles en la aplicación.
+
+---
+
+## 7. Documentación técnica
+- Archivos markdown y comentarios en el código.
+
+---
+
+# Entornos de Desarrollo
+
+## 1. Entorno de desarrollo (IDE)
+- Visual Studio Code con extensiones para PHP y SQL.
+
+---
+
+## 2. Automatización de tareas
+- Scripts de backup y despliegue.
+
+---
+
+## 3. Control de versiones
+- Git y GitHub.
+
+---
+
+## 4. Refactorización
+- Mejoras periódicas en la estructura y modularidad del código.
+
+---
+
+## 5. Documentación técnica
+- README.md, aprendizaje.md, guion.md.
+
+---
+
+## 6. Diagramas
+- Opcional: diagramas de flujo para la arquitectura del sistema.
+
+---
+
+# Bases de Datos
+
+## 1. Sistema gestor
+- MySQL para almacenamiento de datos.
+
+---
+
+## 2. Modelo entidad-relación
+- Tablas: clientes, reservas, habitaciones, facturas, usuarios.
+
+---
+
+## 3. Funcionalidades avanzadas
+- Consultas complejas y generación de informes.
+
+---
+
+## 4. Protección y recuperación de datos
+- Backups automáticos y restauración desde SQL.
+
+---
+
+# Lenguajes de Marcas y Gestión de Información
+
+## 1. Estructura de HTML
+- Uso de etiquetas semánticas en las vistas.
+
+---
+
+## 2. Tecnologías frontend
+- HTML, CSS, JavaScript.
+
+---
+
+## 3. Interacción con el DOM
+- JS para validación y mejora de formularios.
+
+---
+
+## 4. Validación de HTML y CSS
+- Validadores online y extensiones del IDE.
+
+---
+
+## 5. Conversión de datos (XML, JSON)
+- Exportación/importación de datos en JSON y SQL.
+
+---
+
+## 6. Integración con sistemas de gestión
+- Posibilidad de integración con otros sistemas mediante exportaciones.
+
+---
+
+# Proyecto Intermodular
+
+## 1. Objetivo del software
+- Facilitar la gestión integral de un hotel.
+
+---
+
+## 2. Necesidad o problema que soluciona
+- Centraliza reservas, clientes, habitaciones y facturación.
+
+---
+
+## 3. Stack de tecnologías
+- PHP, MySQL, HTML, CSS, JavaScript, bash.
+
+---
+
+## 4. Desarrollo por módulos
+- Módulo de reservas, clientes, habitaciones, facturación y utilidades.
+
+---
+
+<style>
+section code, section pre {
+  font-size: 0.8em;
 }
-```
-
-### 4. Documentación del código
-
-Comentamos el código con `//` y `/* ... */` para explicar partes importantes. En clases y funciones, usamos docstrings para describir su propósito y parámetros.
-
-### 5. Paradigma aplicado
-
-El proyecto combina programación estructurada y orientada a objetos (POO). Usamos POO para organizar el código en clases como `Database`, `EmailService` y modelos de datos, facilitando el mantenimiento y la reutilización.
-
-### 6. Clases y objetos principales
-
-- `Database`: gestiona la conexión y consultas a la base de datos.
-- `EmailService`: envía correos electrónicos.
-- `SuperModel`: clase base para modelos de datos.
-  Estas clases se relacionan usando composición y herencia.
-
-### 7. Conceptos avanzados
-
-Utilizamos herencia (por ejemplo, modelos que extienden `SuperModel`) y polimorfismo para reutilizar y adaptar funcionalidades. No usamos interfaces explícitas, pero sí métodos abstractos en clases base.
-
-### 8. Gestión de información y archivos
-
-Leemos y escribimos archivos (por ejemplo, logs o exportaciones). La interacción principal con el usuario es vía web (formularios HTML y respuestas PHP).
-
-### 9. Estructuras de datos
-
-Usamos arrays para listas de datos (empleados, habitaciones, reservas) y matrices asociativas para representar registros.
-
-### 10. Técnicas avanzadas
-
-Aplicamos expresiones regulares para validar emails y otros datos. Usamos flujos de entrada/salida para leer y escribir archivos.
-
----
-
-## Sistemas Informáticos
-
-### 1. Hardware
-
-Desarrollamos en ordenadores personales (PC/Mac) con procesadores Intel/Apple Silicon, 8GB+ de RAM. El entorno de producción es un servidor web con características similares.
-
-### 2. Sistema operativo
-
-Usamos macOS para desarrollo y Linux (por ejemplo, Ubuntu Server) para producción, por su estabilidad y soporte para PHP/MySQL.
-
-### 3. Redes
-
-El proyecto funciona en una red local (LAN) y puede accederse desde Internet. Usamos HTTP/HTTPS y configuramos el firewall para limitar accesos.
-
-### 4. Copias de seguridad
-
-Realizamos copias de seguridad periódicas de la base de datos y archivos importantes. Para ello, disponemos de un script llamado `backup.sh` en la raíz del proyecto. Este script crea una copia de la base de datos MySQL en la carpeta `backups` con la fecha y hora actual. Debes configurar tus credenciales de MySQL en el propio script antes de usarlo.
-
-Ejemplo de uso:
-
-```bash
-./backup.sh
-```
-
-El script generará un archivo `.sql` con el volcado de la base de datos.
-
-### Automatización de copias de seguridad con cron
-
-Para proteger la información, se ha configurado una tarea cron en macOS que ejecuta el script `backup.sh` cada 3 días a las 2:00 AM. Este script:
-
-- Lee las credenciales de la base de datos desde el archivo `.env`.
-- Comprueba si han pasado al menos 3 días desde el último backup.
-- Si corresponde, genera un archivo `.sql` con el volcado de la base de datos en la carpeta `backups`.
-- Muestra mensajes de éxito o error según el resultado.
-
-#### Configuración rápida:
-
-1. Abre la terminal.
-2. Ejecuta:
-   ```bash
-   export VISUAL=nano; crontab -e
-   ```
-3. Añade al final:
-   ```cron
-   0 2 */3 * * /bin/bash /Applications/MAMP/htdocs/GitHub/PMS-Daniya/backup.sh
-   ```
-4. Guarda y cierra el editor.
-
-Así, la copia de seguridad se realiza automáticamente cada 3 días.
-
-### 5. Seguridad e integridad
-
-Protegemos los datos con contraseñas seguras, cifrado en la base de datos y validación de entradas. Limitamos permisos de archivos y usuarios.
-
-### 6. Usuarios y permisos
-
-Configuramos usuarios en el sistema operativo y en la base de datos con permisos mínimos necesarios.
-
-### 7. Documentación técnica
-
-Mantenemos documentación en archivos markdown y README para la configuración y gestión del sistema.
-
----
-
-## Entornos de Desarrollo
-
-### 1. IDE
-
-Utilizamos Visual Studio Code, configurado con extensiones para PHP, HTML, CSS y Git.
-
-### 2. Automatización de tareas
-
-Automatizamos tareas como la instalación de dependencias con Composer y scripts para copias de seguridad.
-
-### 3. Control de versiones
-
-Usamos Git y GitHub para gestionar el código, versiones y ramas. Creamos ramas para nuevas funcionalidades y corregimos errores en ramas separadas.
-
-### 4. Refactorización
-
-Revisamos y mejoramos el código periódicamente para hacerlo más eficiente y legible.
-
-### 5. Documentación técnica
-
-Documentamos el proyecto con archivos markdown (`README.md`, `RELEASE.md`) y comentarios en el código.
-
-### 6. Diagramas
-
-Creamos diagramas de clases y de flujo para planificar la estructura y el comportamiento de la aplicación.
-
----
-
-## Bases de Datos
-
-### 1. SGBD
-
-Usamos MySQL por su integración con PHP y facilidad de uso.
-
-### 2. Modelo entidad-relación
-
-Diseñamos un modelo con tablas para empleados, clientes, habitaciones, reservas, etc., y relaciones entre ellas (uno a muchos, muchos a muchos).
-
-### 3. Funcionalidades avanzadas
-
-Utilizamos vistas para consultas complejas y procedimientos almacenados para operaciones repetitivas.
-
-### 4. Protección y recuperación de datos
-
-Implementamos copias de seguridad y validaciones para evitar pérdidas o corrupciones.
-
----
-
-## Lenguajes de Marcas y Gestión de Información
-
-### 1. Estructura HTML
-
-Estructuramos los documentos HTML con etiquetas semánticas (`<header>`, `<nav>`, `<main>`, `<footer>`) y seguimos buenas prácticas.
-
-### 2. Tecnologías frontend
-
-Usamos CSS para el diseño y JavaScript para la interactividad. Elegimos estas tecnologías por su compatibilidad y facilidad de uso.
-
-### 3. Interacción con el DOM
-
-Utilizamos JavaScript para modificar el DOM dinámicamente, por ejemplo, mostrando mensajes o actualizando tablas.
-
-### 4. Validación
-
-Validamos HTML y CSS con herramientas online para asegurar la compatibilidad.
-
-### 5. Conversión de datos
-
-Convertimos datos entre formatos (por ejemplo, JSON para respuestas de la API) para facilitar la comunicación entre frontend y backend.
-
-### 6. Aplicación de gestión empresarial
-
-Nuestra aplicación es un software de gestión hotelera, permitiendo controlar reservas, clientes, empleados, facturación, etc.
-
----
-
-## Proyecto Intermodular
-
-### 1. Objetivo
-
-El software gestiona un hotel, facilitando la administración de reservas, clientes, habitaciones y empleados.
-
-### 2. Necesidad o problema
-
-Resuelve la gestión manual y dispersa de la información en hoteles, centralizando y automatizando procesos.
-
-### 3. Stack tecnológico
-
-PHP, MySQL, HTML, CSS, JavaScript. Elegimos este stack por su robustez, facilidad de aprendizaje y amplia documentación.
-
-### 4. Desarrollo por versiones
-
-Comenzamos con una versión mínima funcional (gestión básica de reservas y clientes) y añadimos nuevas funcionalidades en versiones posteriores (facturación, reportes, marketing, etc).
-
----
+.small-code code, .small-code pre {
+  font-size: 0.7em;
+}
+</style>
