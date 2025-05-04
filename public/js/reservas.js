@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     listarReservasPaginado(1);
     renderCalendar();
+    initializeReservasPageNav(); // Inicializar la paginación interna
     // Auto-actualización cada 30 segundos
     setInterval(() => {
         listarReservasPaginado(1);
@@ -152,6 +153,40 @@ function crearReserva(esDesdeCalendario = false) {
     });
 }
 
+// Función para crear una nueva reserva (versión integrada en página)
+function crearReservaIntegrada() {
+    const formData = {
+        id_cliente: document.getElementById('id_cliente_integrado').value,
+        id_habitacion: document.getElementById('id_habitacion_integrado').value,
+        fecha_entrada: document.getElementById('fecha_entrada_integrado').value,
+        fecha_salida: document.getElementById('fecha_salida_integrado').value,
+        estado_reserva: document.getElementById('estado_integrado').value
+    };
+
+    fetch('../api/reservas.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(formData)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            mostrarAlerta('Reserva creada con éxito', 'success');
+            document.getElementById('formNuevaReservaIntegrado').reset();
+            listarReservasPaginado(1);
+            if (calendar) calendar.refetchEvents();
+            // Ir a la página de listado después de crear
+            showReservasPage(1); // Volver a la primera página (filtros)
+        } else {
+            mostrarAlerta(data.error || 'Error al crear la reserva', 'danger');
+        }
+    })
+    .catch(e => {
+        console.error('Error al crear reserva integrada:', e);
+        mostrarAlerta('Error al crear la reserva', 'danger');
+    });
+}
+
 // Editar reserva
 function editarReserva() {
     const id_reserva = document.getElementById('id_reserva_editar').value;
@@ -278,6 +313,78 @@ function buscarDisponibles() {
             console.error('Error al buscar habitaciones disponibles:', e);
             mostrarAlerta('Error al buscar habitaciones disponibles', 'danger');
         });
+}
+
+// Función para manejar la paginación interna
+function initializeReservasPageNav() {
+    const pages = document.querySelectorAll('#reservas-pages .content-page');
+    if (!pages.length) return; // Si no hay páginas, no hace nada
+    
+    const prevBtn = document.getElementById('prevRes');
+    const nextBtn = document.getElementById('nextRes');
+    const currentPageEl = document.getElementById('currentResPage');
+    const totalPagesEl = document.getElementById('totalResPages');
+    let current = 0;
+
+    // Establecer el total de páginas
+    if (totalPagesEl) {
+        totalPagesEl.textContent = pages.length;
+    }
+
+    function updateButtons() {
+        if (prevBtn) prevBtn.disabled = current === 0;
+        if (nextBtn) nextBtn.disabled = current === pages.length - 1;
+        if (currentPageEl) currentPageEl.textContent = current + 1;
+    }
+
+    // Función para mostrar una página específica
+    window.showReservasPage = function(index) {
+        // index debe ser 0-indexed internamente pero 1-indexed para el usuario
+        index = parseInt(index);
+        const adjustedIndex = index - 1; 
+        
+        if (adjustedIndex >= 0 && adjustedIndex < pages.length) {
+            pages[current].classList.remove('active');
+            current = adjustedIndex;
+            pages[current].classList.add('active');
+            updateButtons();
+        }
+    };
+
+    // Configurar los botones de navegación
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => { 
+            if (current > 0) {
+                pages[current].classList.remove('active');
+                current--;
+                pages[current].classList.add('active');
+                updateButtons();
+            }
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => { 
+            if (current < pages.length - 1) {
+                pages[current].classList.remove('active');
+                current++;
+                pages[current].classList.add('active');
+                updateButtons();
+            }
+        });
+    }
+
+    // Añadir navegación cuando filtra para ir a la página de resultados
+    const formFiltro = document.querySelector('form[onsubmit*="listarReservasPaginado"]');
+    if (formFiltro) {
+        formFiltro.addEventListener('submit', () => {
+            // Ir a la página 2 (listado) después de filtrar
+            setTimeout(() => showReservasPage(2), 100);
+        });
+    }
+
+    // Configuración inicial de botones
+    updateButtons();
 }
 
 // Funciones auxiliares

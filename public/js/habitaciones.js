@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     listarHabitaciones();
     actualizarEstadisticas();
+    initializeHabitacionesPageNav(); // Inicializar la paginación interna
 });
 
 // Función para actualizar las estadísticas en las tarjetas
@@ -146,6 +147,40 @@ function crearHabitacion() {
     });
 }
 
+// Función para crear una nueva habitación (versión integrada en página)
+function crearHabitacionEnPagina() {
+    const formData = {
+        numero_habitacion: document.getElementById('numHabInPage').value,
+        tipo_habitacion: document.getElementById('tipoHabInPage').value,
+        capacidad: document.getElementById('capHabInPage').value,
+        piso: document.getElementById('pisoHabInPage').value,
+        estado: document.getElementById('estHabInPage').value
+    };
+
+    fetch('../api/habitaciones.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(formData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            mostrarAlerta('Habitación creada con éxito', 'success');
+            document.getElementById('formNuevaHabitacionInPage').reset();
+            listarHabitaciones();
+            actualizarEstadisticas();
+            // Ir a la página de listado después de crear
+            showHabitacionesPage(1); // Volver a la primera página (estadísticas)
+        } else {
+            mostrarAlerta(data.error || 'Error al crear la habitación', 'danger');
+        }
+    })
+    .catch(err => {
+        console.error('Error en crearHabitacionEnPagina:', err);
+        mostrarAlerta('Error al crear la habitación', 'danger');
+    });
+}
+
 // Función para eliminar una habitación
 function eliminarHabitacion(idHab) {
     if (!confirm('¿Está seguro de que desea eliminar esta habitación?')) return;
@@ -181,4 +216,51 @@ function mostrarAlerta(mensaje, tipo) {
     setTimeout(() => {
         alertDiv.remove();
     }, 3000);
+}
+
+// Función para manejar la paginación interna
+function initializeHabitacionesPageNav() {
+    const pages = document.querySelectorAll('#habitaciones-pages .content-page');
+    const prevBtn = document.getElementById('prevHab');
+    const nextBtn = document.getElementById('nextHab');
+    const currentPageEl = document.getElementById('currentHabPage');
+    const totalPagesEl = document.getElementById('totalHabPages');
+    let current = 0;
+
+    // Establecer el total de páginas
+    if (totalPagesEl) {
+        totalPagesEl.textContent = pages.length;
+    }
+
+    function updateButtons() {
+        if (prevBtn) prevBtn.disabled = current === 0;
+        if (nextBtn) nextBtn.disabled = current === pages.length - 1;
+        if (currentPageEl) currentPageEl.textContent = current + 1;
+    }
+
+    // Función para mostrar una página específica
+    window.showHabitacionesPage = function(index) {
+        if (index >= 0 && index < pages.length) {
+            pages[current].classList.remove('active');
+            current = index;
+            pages[current].classList.add('active');
+            updateButtons();
+        }
+    };
+
+    // Configurar los botones de navegación
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => { 
+            if (current > 0) showHabitacionesPage(current - 1); 
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => { 
+            if (current < pages.length - 1) showHabitacionesPage(current + 1); 
+        });
+    }
+
+    // Configuración inicial de botones
+    updateButtons();
 }

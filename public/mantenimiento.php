@@ -17,124 +17,173 @@ if (!isset($_SESSION['usuario_id'])) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Estilos para evitar el scroll vertical en la página principal */
+        body,
+        html {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scrollable-content {
+            overflow-y: auto;
+            flex: 1;
+            padding: 15px;
+        }
+
+        .cards-row {
+            flex-shrink: 0;
+            margin-bottom: 15px;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Ajustes específicos para la tabla */
+        .table-container {
+            max-height: calc(100% - 20px);
+            overflow-y: auto;
+            margin-bottom: 0;
+        }
+    </style>
 </head>
 
 <body>
-    <?php include __DIR__ . '/../partials/navbar.php'; ?>
+    <div class="main-wrapper">
+        <?php include __DIR__ . '/../partials/navbar.php'; ?>
 
-    <div class="d-flex" style="margin-top:1rem;">
-        <?php include __DIR__ . '/../partials/sidebar.php'; ?>
+        <div class="content-wrapper">
+            <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
-        <div class="main-content container-fluid">
-            <div class="row mb-4">
-                <div class="col">
-                    <h2 class="page-title">Gestión de Mantenimiento</h2>
+            <div class="main-content container-fluid p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="page-title mb-0">Gestión de Mantenimiento</h2>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaIncidencia">
+                        <i class="fas fa-plus me-2"></i>Nueva Incidencia
+                    </button>
                 </div>
-            </div>
 
-            <!-- Resumen de Incidencias -->
-            <div class="row g-4 mb-4">
-                <!-- Pendientes -->
-                <div class="col-md-3">
-                    <div class="card stat-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-clock stat-icon text-warning"></i>
-                            <div id="pendientes" class="stat-value">0</div>
-                            <div class="stat-label">Pendientes</div>
+                <!-- Resumen de Incidencias - Fixed Height -->
+                <div class="row g-3 cards-row">
+                    <!-- Pendientes -->
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center py-2">
+                                <i class="fas fa-clock stat-icon text-warning"></i>
+                                <div id="pendientes" class="stat-value">0</div>
+                                <div class="stat-label">Pendientes</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- En Proceso -->
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center py-2">
+                                <i class="fas fa-tools stat-icon text-info"></i>
+                                <div id="en-proceso" class="stat-value">0</div>
+                                <div class="stat-label">En Proceso</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resueltas -->
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center py-2">
+                                <i class="fas fa-check-circle stat-icon text-success"></i>
+                                <div id="resueltas" class="stat-value">0</div>
+                                <div class="stat-label">Resueltas</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center py-2">
+                                <i class="fas fa-clipboard-list stat-icon text-primary"></i>
+                                <div id="total" class="stat-value">0</div>
+                                <div class="stat-label">Total Incidencias</div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- En Proceso -->
-                <div class="col-md-3">
-                    <div class="card stat-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-tools stat-icon text-info"></i>
-                            <div id="en-proceso" class="stat-value">0</div>
-                            <div class="stat-label">En Proceso</div>
-                        </div>
+                <!-- Filtros de búsqueda - Fixed Height -->
+                <div class="card mb-3">
+                    <div class="card-body py-2">
+                        <h5 class="card-title mb-3">Buscar Incidencias</h5>
+                        <form onsubmit="event.preventDefault(); listarIncidenciasPaginado(1);" class="row g-2">
+                            <div class="col-md-4">
+                                <label for="searchMant" class="form-label small mb-1">Búsqueda:</label>
+                                <input type="text" id="searchMant" class="form-control form-control-sm" placeholder="Buscar por descripción...">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="estadoMant" class="form-label small mb-1">Estado:</label>
+                                <select id="estadoMant" class="form-select form-select-sm">
+                                    <option value="">Todos</option>
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="En proceso">En proceso</option>
+                                    <option value="Resuelto">Resuelto</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="fas fa-search me-1"></i>Filtrar
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
-                <!-- Resueltas -->
-                <div class="col-md-3">
-                    <div class="card stat-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-check-circle stat-icon text-success"></i>
-                            <div id="resueltas" class="stat-value">0</div>
-                            <div class="stat-label">Resueltas</div>
-                        </div>
+                <!-- Tabla de incidencias - Scrollable -->
+                <div class="card mb-0 flex-grow-1">
+                    <div class="card-header py-2">
+                        <h5 class="card-title mb-0">Listado de Incidencias</h5>
                     </div>
-                </div>
-
-                <!-- Total -->
-                <div class="col-md-3">
-                    <div class="card stat-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-clipboard-list stat-icon text-primary"></i>
-                            <div id="total" class="stat-value">0</div>
-                            <div class="stat-label">Total Incidencias</div>
+                    <div class="card-body p-0 d-flex flex-column h-100">
+                        <div class="table-container">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Habitación</th>
+                                        <th>Empleado</th>
+                                        <th>Descripción</th>
+                                        <th>F. Reporte</th>
+                                        <th>F. Resolución</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-mant">
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                            </table>
                         </div>
+                        <div id="paginacionMant" class="mt-2 p-2 border-top"></div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Filtros de búsqueda -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title mb-4">Buscar Incidencias</h3>
-                    <form onsubmit="event.preventDefault(); listarIncidenciasPaginado(1);" class="row g-3">
-                        <div class="col-md-4">
-                            <label for="searchMant" class="form-label">Búsqueda:</label>
-                            <input type="text" id="searchMant" class="form-control" placeholder="Buscar por descripción...">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="estadoMant" class="form-label">Estado:</label>
-                            <select id="estadoMant" class="form-select">
-                                <option value="">Todos</option>
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="En proceso">En proceso</option>
-                                <option value="Resuelto">Resuelto</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-search me-2"></i>Filtrar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Tabla de incidencias -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="card-title mb-0">Listado de Incidencias</h3>
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaIncidencia">
-                            <i class="fas fa-plus me-2"></i>Nueva Incidencia
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Habitación</th>
-                                    <th>Empleado</th>
-                                    <th>Descripción</th>
-                                    <th>F. Reporte</th>
-                                    <th>F. Resolución</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-mant">
-                                <!-- Se llena dinámicamente -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="paginacionMant" class="mt-3"></div>
                 </div>
             </div>
         </div>

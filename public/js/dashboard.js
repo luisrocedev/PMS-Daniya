@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Actualizar datos cada 5 minutos
     setInterval(loadDashboardData, 300000);
+
+    // Inicializar paginación interna del dashboard
+    initializePageNav();
 });
 
 function initializeCounters() {
@@ -119,15 +122,17 @@ function updateOccupancyChart(data) {
 }
 
 function updateRevenueChart(data) {
-    // Validar que los datos existan y sean arrays
-    if (!data || !Array.isArray(data.valores) || !Array.isArray(data.labels)) {
+    // Validar que los datos existan y sean arrays válidos y numéricos
+    if (!data || !Array.isArray(data.valores) || !Array.isArray(data.labels) || data.valores.length === 0 || data.labels.length === 0) {
         console.error('Datos de ingresos no válidos para el gráfico');
+        const chartContainer = document.querySelector('#revenueChart');
+        if (chartContainer) chartContainer.innerHTML = '<div class="text-center text-danger">Sin datos de ingresos</div>';
         return;
     }
 
-    // Asegurarse de que tenemos datos válidos
-    const valores = data.valores.map(v => Number(v) || 0);
-    const fechas = data.labels || [];
+    // Filtrar solo valores numéricos y no negativos
+    const valores = data.valores.map(v => (isFinite(v) && v >= 0 ? Number(v) : 0));
+    const fechas = data.labels;
 
     const options = {
         series: [{
@@ -146,7 +151,7 @@ function updateRevenueChart(data) {
         },
         xaxis: {
             categories: fechas,
-            type: 'category' // Cambiado de 'datetime' a 'category'
+            type: 'category'
         },
         yaxis: {
             labels: {
@@ -238,4 +243,34 @@ function updateUpcomingCheckins(data) {
         `;
         tbody.appendChild(tr);
     });
+}
+
+function initializePageNav() {
+    const pages = document.querySelectorAll('.dashboard-page');
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    const currentPageEl = document.getElementById('currentPage');
+    const totalPagesEl = document.getElementById('totalPages');
+    let current = 0;
+
+    // Establecer el total de páginas
+    if (totalPagesEl) totalPagesEl.textContent = pages.length;
+
+    function updateButtons() {
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === pages.length - 1;
+        if (currentPageEl) currentPageEl.textContent = current + 1;
+    }
+
+    function showPage(index) {
+        pages[current].classList.remove('active');
+        current = index;
+        pages[current].classList.add('active');
+        updateButtons();
+    }
+
+    prevBtn.addEventListener('click', () => { if (current > 0) showPage(current - 1); });
+    nextBtn.addEventListener('click', () => { if (current < pages.length - 1) showPage(current + 1); });
+
+    updateButtons();
 }

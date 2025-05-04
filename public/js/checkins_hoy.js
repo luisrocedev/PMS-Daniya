@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeApp() {
   cargarCheckIns();
   setupAutoRefresh();
+  initializeCheckinsHoyPageNav(); // Nueva función para paginación interna
 }
 
 // Configurar auto-refresh
@@ -161,4 +162,44 @@ function getStatusClass(estado) {
     default:
       return '';
   }
+}
+
+// Función de paginación interna para checkins de hoy
+function initializeCheckinsHoyPageNav() {
+  const pages = document.querySelectorAll('#checkins-hoy-pages .content-page');
+  const prevBtn = document.getElementById('prevCh');
+  const nextBtn = document.getElementById('nextCh');
+  const currentPageEl = document.getElementById('currentChPage');
+  const totalPagesEl = document.getElementById('totalChPages');
+  let current = 0;
+
+  // Establecer el total de páginas
+  if (totalPagesEl) totalPagesEl.textContent = pages.length;
+
+  function updateButtons() {
+    if (prevBtn) prevBtn.disabled = current === 0;
+    if (nextBtn) nextBtn.disabled = current === pages.length - 1;
+    if (currentPageEl) currentPageEl.textContent = current + 1;
+  }
+
+  function showPage(index) {
+    pages[current].classList.remove('active');
+    current = index;
+    pages[current].classList.add('active');
+    updateButtons();
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => { 
+      if (current > 0) showPage(current - 1); 
+    });
+  }
+  
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => { 
+      if (current < pages.length - 1) showPage(current + 1); 
+    });
+  }
+
+  updateButtons();
 }

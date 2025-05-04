@@ -50,7 +50,7 @@ foreach ($clientes as $cliente) {
 ---
 
 ## 6. Clases y objetos principales
-- Clases: Cliente, Reserva, Habitacion, Factura.
+- Clases: Cliente, Reserva, Habitacion, Factura, Incidencia.
 - Uso de objetos y arrays para gestionar datos.
 
 ---
@@ -59,23 +59,27 @@ foreach ($clientes as $cliente) {
 - Conexión a MySQL con PDO o MySQLi.
 - Generación de informes y backups automáticos.
 - Modularidad y reutilización de funciones.
+- Gráficos interactivos y exportación de datos (CSV, PDF, XLSX).
+- Estadísticas en tiempo real y filtros avanzados.
 
 ---
 
 ## 8. Gestión de información y archivos
 - Uso de base de datos MySQL.
 - Exportación/importación de datos en SQL y JSON.
+- Automatización de backups y scripts de despliegue.
 
 ---
 
 ## 9. Estructuras de datos utilizadas
-- Arrays y objetos para clientes, reservas, habitaciones y facturas.
+- Arrays y objetos para clientes, reservas, habitaciones, facturas e incidencias.
 
 ---
 
 ## 10. Técnicas avanzadas
 - Scripts de backup en bash y PHP.
 - Validación de formularios y gestión de sesiones.
+- Validación y sanitización de datos, permisos por rol.
 
 ---
 
@@ -104,6 +108,7 @@ foreach ($clientes as $cliente) {
 ## 5. Integridad y seguridad de datos
 - Validación de entradas y gestión de sesiones.
 - Uso de permisos y autenticación básica.
+- Seguridad reforzada en inputs y sesiones.
 
 ---
 
@@ -126,6 +131,7 @@ foreach ($clientes as $cliente) {
 
 ## 2. Automatización de tareas
 - Scripts de backup y despliegue.
+- Refactorización y modularización periódica.
 
 ---
 
@@ -136,6 +142,7 @@ foreach ($clientes as $cliente) {
 
 ## 4. Refactorización
 - Mejoras periódicas en la estructura y modularidad del código.
+- Optimización de consultas y rendimiento.
 
 ---
 
@@ -157,12 +164,13 @@ foreach ($clientes as $cliente) {
 ---
 
 ## 2. Modelo entidad-relación
-- Tablas: clientes, reservas, habitaciones, facturas, usuarios.
+- Tablas: clientes, reservas, habitaciones, facturas, incidencias, usuarios.
 
 ---
 
 ## 3. Funcionalidades avanzadas
 - Consultas complejas y generación de informes.
+- Estadísticas y reportes avanzados.
 
 ---
 
@@ -180,11 +188,13 @@ foreach ($clientes as $cliente) {
 
 ## 2. Tecnologías frontend
 - HTML, CSS, JavaScript.
+- Gráficos interactivos y animaciones.
 
 ---
 
 ## 3. Interacción con el DOM
 - JS para validación y mejora de formularios.
+- Actualización dinámica de estadísticas y tablas.
 
 ---
 
@@ -211,7 +221,7 @@ foreach ($clientes as $cliente) {
 ---
 
 ## 2. Necesidad o problema que soluciona
-- Centraliza reservas, clientes, habitaciones y facturación.
+- Centraliza reservas, clientes, habitaciones, facturación y mantenimiento.
 
 ---
 
@@ -221,7 +231,7 @@ foreach ($clientes as $cliente) {
 ---
 
 ## 4. Desarrollo por módulos
-- Módulo de reservas, clientes, habitaciones, facturación y utilidades.
+- Módulo de reservas, clientes, habitaciones, facturación, mantenimiento, reportes y utilidades.
 
 ---
 

@@ -1,84 +1,62 @@
-# Release Notes - PMS Daniya Denia v1.1.0 (26 de abril de 2025)
+# Release Notes - PMS Daniya Denia v1.2.0 (4 de mayo de 2025)
 
 ## 🚀 Nuevas Características
 
-### Módulo de Reportes Avanzados
-- Implementación de gráficos interactivos para visualización de datos
-- Nuevo sistema de exportación en múltiples formatos (CSV, PDF, XLSX)
-- Visualización de tendencias mensuales de ingresos
-- Nombres de meses en español y formato de moneda mejorado
+### Reportes Avanzados
+- Gráficos interactivos y visualización de tendencias.
+- Exportación de datos en CSV, PDF y XLSX.
+- Estadísticas en tiempo real y filtros avanzados.
 
 ### Gestión de Mantenimiento
-- Sistema mejorado de seguimiento de incidencias
-- Estadísticas en tiempo real de estado de mantenimientos
-- Integración con el sistema de habitaciones
-- Filtros avanzados para búsqueda de incidencias
+- Seguimiento mejorado de incidencias y estados.
+- Estadísticas en tiempo real y filtros dinámicos.
+- Integración total con habitaciones y empleados.
 
-### Sistema de Habitaciones
-- Nueva interfaz de gestión de estados
-- Mejora en la visualización de disponibilidad
-- Sistema de filtros optimizado
-- Estadísticas en tiempo real
+### Automatización y Utilidades
+- Scripts automáticos de backup y restauración.
+- Automatización de despliegues y tareas de mantenimiento.
 
 ## 🔧 Mejoras Técnicas
 
 ### Rendimiento
-- Optimización de consultas a base de datos
-- Mejora en la carga de datos en la interfaz
-- Implementación de caché para datos frecuentes
-- Reducción de llamadas API innecesarias
+- Optimización de consultas SQL y reducción de llamadas API.
+- Implementación de caché para datos frecuentes.
+- Modularización y refactorización del código JS y PHP.
 
 ### Interfaz de Usuario
-- Actualización de CDN Font Awesome a v6.5.1
-- Mejora en la consistencia visual
-- Nuevas animaciones para mejor feedback
-- Tooltips informativos en gráficos
+- Mejoras visuales y nuevas animaciones.
+- Tooltips y feedback visual en reportes y formularios.
+- Validaciones mejoradas en frontend y backend.
 
 ### Seguridad
-- Mejora en la validación de datos
-- Implementación de sanitización en inputs
-- Manejo mejorado de sesiones
-- Validación de permisos por rol
+- Validación y sanitización de datos en todos los módulos.
+- Refuerzo de permisos por rol y gestión de sesiones.
 
 ## 🐛 Correcciones
 
-### Reportes
-- Corrección en la visualización de datos mensuales
-- Arreglo de inconsistencias en cálculos estadísticos
-- Solución de problemas con exportación de datos
-- Corrección en formato de fechas
-
-### Mantenimiento
-- Arreglo en asignación de habitaciones
-- Corrección en actualización de estados
-- Solución de problemas con filtros
-- Mejora en la gestión de fechas
-
-### General
-- Corrección de problemas CORS
-- Arreglo de inconsistencias en la UI
-- Solución de problemas de compatibilidad
-- Mejora en manejo de errores
+- Solución de problemas en reportes mensuales y exportaciones.
+- Corrección de filtros y estados en mantenimiento.
+- Arreglo de inconsistencias en la UI y compatibilidad general.
+- Mejor manejo de errores y mensajes al usuario.
 
 ## 📋 Notas de Actualización
-1. Actualizar la base de datos ejecutando los scripts de migración
-2. Limpiar la caché del navegador
-3. Verificar la configuración de permisos
-4. Revisar la documentación actualizada
+1. Ejecutar scripts de migración de base de datos si es necesario.
+2. Limpiar la caché del navegador tras la actualización.
+3. Verificar la configuración de permisos y roles.
+4. Consultar la documentación actualizada para nuevas funciones.
 
 ## 🔜 Próximas Mejoras
-- Sistema de notificaciones en tiempo real
-- Integración con plataformas de reserva externas
-- Dashboard personalizable
-- Sistema de reportes personalizados
+- Sistema de notificaciones en tiempo real.
+- Integración con plataformas externas de reservas.
+- Dashboard personalizable y reportes a medida.
 
 ---
 
 ## 📊 Estadísticas
-- Archivos modificados: 47
-- Nuevas funcionalidades: 15
-- Correcciones: 23
-- Mejoras de rendimiento: 8
+- Archivos modificados: 54
+- Nuevas funcionalidades: 18
+- Correcciones: 27
+- Mejoras de rendimiento: 10
 
 ## 🔍 Compatibilidad
 - Navegadores soportados: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+

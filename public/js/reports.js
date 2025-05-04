@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeApp() {
     setupEventListeners();
     loadInitialData();
+    initializeReportsPageNav(); // Paginación interna de reportes
 }
 
 // Configurar event listeners
@@ -37,11 +38,10 @@ async function loadStats() {
     try {
         const response = await fetch('../api/reportes_avanzados.php?action=stats_generales');
         const data = await response.json();
-        
+        console.log('Respuesta de stats_generales:', data); // Log para depuración
         updateStatCard('total-revenue', data.ingresos_mes, '€', true);
         updateStatCard('avg-occupancy', data.ocupacion_media, '%');
         updateStatCard('total-bookings', data.reservas_mes);
-        
     } catch (error) {
         console.error('Error al cargar estadísticas:', error);
     }
@@ -50,30 +50,37 @@ async function loadStats() {
 // Actualizar tarjeta de estadística con animación
 function updateStatCard(id, value, suffix = '', isCurrency = false) {
     const element = document.getElementById(id);
-    const start = parseInt(element.textContent);
-    const end = isCurrency ? parseFloat(value) : parseInt(value);
-    
+    let start = parseInt(element.textContent);
+    let end = isCurrency ? parseFloat(value) : parseInt(value);
+    // Validar que los valores sean finitos y no negativos
+    if (!isFinite(start) || start < 0) start = 0;
+    if (!isFinite(end) || end < 0) end = 0;
     animateValue(element, start, end, 1000, suffix, isCurrency);
 }
 
 // Animación de valores
 function animateValue(element, start, end, duration, suffix = '', isCurrency = false) {
+    // Validar que los valores sean finitos y no negativos
+    if (!isFinite(start) || start < 0) start = 0;
+    if (!isFinite(end) || end < 0) end = 0;
+    if (start === end) {
+        element.textContent = isCurrency
+            ? end.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + suffix
+            : end + suffix;
+        return;
+    }
     const range = end - start;
     const increment = end > start ? 1 : -1;
-    const stepTime = Math.abs(Math.floor(duration / range));
+    const stepTime = Math.abs(Math.floor(duration / Math.max(Math.abs(range), 1)));
     let current = start;
-    
     const timer = setInterval(() => {
         current += increment;
+        if ((increment > 0 && current > end) || (increment < 0 && current < end)) current = end;
         if (isCurrency) {
-            element.textContent = current.toLocaleString('es-ES', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }) + suffix;
+            element.textContent = current.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + suffix;
         } else {
             element.textContent = current + suffix;
         }
-        
         if (current === end) {
             clearInterval(timer);
         }
@@ -93,13 +100,17 @@ async function updateFinancialChart() {
             financialChart.destroy();
         }
         
+        // Validar que data.valores sea un array
+        const valores = Array.isArray(data.valores) ? data.valores.map(v => (isFinite(v) && v >= 0 ? Number(v) : 0)) : [];
+        const labels = Array.isArray(data.labels) ? data.labels : [];
+        
         financialChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.labels,
+                labels: labels,
                 datasets: [{
                     label: 'Ingresos',
-                    data: data.valores,
+                    data: valores,
                     borderColor: '#4CAF50',
                     backgroundColor: 'rgba(76, 175, 80, 0.1)',
                     fill: true,
@@ -153,6 +164,9 @@ async function updateOccupancyData() {
 
 // Actualizar gráfico de ocupación
 function updateOccupancyChart(data) {
+    // Validar que data.ocupacion y data.dates sean arrays
+    const ocupacion = Array.isArray(data.ocupacion) ? data.ocupacion.map(v => (isFinite(v) && v >= 0 ? Number(v) : 0)) : [];
+    const dates = Array.isArray(data.dates) ? data.dates : [];
     const options = {
         chart: {
             type: 'area',
@@ -165,10 +179,10 @@ function updateOccupancyChart(data) {
         },
         series: [{
             name: 'Ocupación',
-            data: data.ocupacion
+            data: ocupacion
         }],
         xaxis: {
-            categories: data.dates
+            categories: dates
         },
         yaxis: {
             labels: {
@@ -197,6 +211,10 @@ function updateOccupancyChart(data) {
 // Actualizar estadísticas por tipo de habitación
 function updateRoomTypeStats(data) {
     const tbody = document.getElementById('room-type-stats');
+    if (!Array.isArray(data)) {
+        tbody.innerHTML = '<tr><td colspan="5">Sin datos de tipos de habitación</td></tr>';
+        return;
+    }
     tbody.innerHTML = data.map(type => `
         <tr>
             <td>${type.nombre}</td>
@@ -258,18 +276,22 @@ async function updateReservationsChart() {
 // Actualizar tendencias de reservas
 function updateBookingTrends(data) {
     const ctx = document.getElementById('bookingTrendsChart').getContext('2d');
-    
-    if (bookingTrendsChart) {
-        bookingTrendsChart.destroy();
+    if (!data || !Array.isArray(data.labels) || !Array.isArray(data.valores)) {
+        if (typeof bookingTrendsChart !== 'undefined' && bookingTrendsChart) bookingTrendsChart.destroy();
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
     }
-    
+    // Validar datos para evitar valores infinitos o negativos
+    const safeLabels = data.labels;
+    const safeValores = data.valores.map(v => (isFinite(v) && v >= 0 ? v : 0));
+    if (bookingTrendsChart) bookingTrendsChart.destroy();
     bookingTrendsChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.labels,
+            labels: safeLabels,
             datasets: [{
                 label: 'Tendencia de Reservas',
-                data: data.valores,
+                data: safeValores,
                 borderColor: '#673AB7',
                 backgroundColor: 'rgba(103, 58, 183, 0.1)',
                 fill: true,
@@ -295,11 +317,11 @@ function updateBookingTrends(data) {
 // Actualizar gráfico de estancia media
 function updateAverageStay(data) {
     const ctx = document.getElementById('avgStayChart').getContext('2d');
-    
-    if (avgStayChart) {
-        avgStayChart.destroy();
+    if (!data || !Array.isArray(data.labels) || !Array.isArray(data.valores)) {
+        if (typeof avgStayChart !== 'undefined' && avgStayChart) avgStayChart.destroy();
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
     }
-    
     avgStayChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -352,4 +374,35 @@ function getOccupancyClass(percentage) {
     if (percentage >= 80) return 'positive';
     if (percentage >= 50) return 'neutral';
     return 'negative';
+}
+
+// Función de paginación interna para la sección de reportes
+function initializeReportsPageNav() {
+    const pages = document.querySelectorAll('#reports-pages .report-page');
+    const prevBtn = document.getElementById('prevRep');
+    const nextBtn = document.getElementById('nextRep');
+    const currentPageEl = document.getElementById('currentRepPage');
+    const totalPagesEl = document.getElementById('totalRepPages');
+    let current = 0;
+
+    // Establecer el total de páginas
+    if (totalPagesEl) totalPagesEl.textContent = pages.length;
+
+    function updateButtons() {
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === pages.length - 1;
+        if (currentPageEl) currentPageEl.textContent = current + 1;
+    }
+
+    function showPage(index) {
+        pages[current].classList.remove('active');
+        current = index;
+        pages[current].classList.add('active');
+        updateButtons();
+    }
+
+    prevBtn.addEventListener('click', () => { if (current > 0) showPage(current - 1); });
+    nextBtn.addEventListener('click', () => { if (current < pages.length - 1) showPage(current + 1); });
+
+    updateButtons();
 }

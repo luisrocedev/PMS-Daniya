@@ -12,6 +12,7 @@ function initializeApp() {
   cargarCheckInOut();
   setupAutoRefresh();
   initializeEventListeners();
+  initializeCheckinPageNav(); // inicializar paginación interna
 }
 
 // Configurar auto-refresh
@@ -331,4 +332,35 @@ async function handleNewCargo() {
   } catch (error) {
     console.error('Error al añadir cargo:', error);
   }
+}
+
+// Función de paginación interna para checkincheckout
+function initializeCheckinPageNav() {
+  const pages = document.querySelectorAll('#checkin-pages .check-page');
+  const prevBtn = document.getElementById('prevChk');
+  const nextBtn = document.getElementById('nextChk');
+  const currentPageEl = document.getElementById('currentChkPage');
+  const totalPagesEl = document.getElementById('totalChkPages');
+  let current = 0;
+
+  // Establecer el total de páginas
+  if (totalPagesEl) totalPagesEl.textContent = pages.length;
+
+  function updateButtons() {
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === pages.length - 1;
+    if (currentPageEl) currentPageEl.textContent = current + 1;
+  }
+
+  function showPage(index) {
+    pages[current].classList.remove('active');
+    current = index;
+    pages[current].classList.add('active');
+    updateButtons();
+  }
+
+  prevBtn.addEventListener('click', () => { if (current > 0) showPage(current - 1); });
+  nextBtn.addEventListener('click', () => { if (current < pages.length - 1) showPage(current + 1); });
+
+  updateButtons();
 }

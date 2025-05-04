@@ -88,103 +88,118 @@ if (!isset($_SESSION['usuario_id'])) {
 
       <h2 class="page-title mb-4">Panel de Control - Daniya Denia</h2>
 
-      <!-- Tarjetas de Estadísticas -->
-      <div class="row g-4 mb-4">
-        <!-- Ocupación -->
-        <div class="col-md-3">
-          <div class="card stat-card">
-            <div class="card-body text-center">
-              <i class="fas fa-bed stat-icon text-primary"></i>
-              <div id="occupancyRate" class="stat-value">0%</div>
-              <div class="stat-label">Ocupación Actual</div>
-              <div id="occupancyTrend" class="trend-indicator"></div>
+      <div id="dashboard-pages">
+        <div class="dashboard-page active" data-page="1">
+          <!-- Página 1: Tarjetas de Estadísticas -->
+          <div class="row g-4 mb-4">
+            <!-- Ocupación -->
+            <div class="col-md-3">
+              <div class="card stat-card">
+                <div class="card-body text-center">
+                  <i class="fas fa-bed stat-icon text-primary"></i>
+                  <div id="occupancyRate" class="stat-value">0%</div>
+                  <div class="stat-label">Ocupación Actual</div>
+                  <div id="occupancyTrend" class="trend-indicator"></div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Ingresos -->
-        <div class="col-md-3">
-          <div class="card stat-card">
-            <div class="card-body text-center">
-              <i class="fas fa-euro-sign stat-icon text-success"></i>
-              <div id="revenue" class="stat-value">0€</div>
-              <div class="stat-label">Ingresos del Mes</div>
-              <div id="revenueTrend" class="trend-indicator"></div>
+            <!-- Ingresos -->
+            <div class="col-md-3">
+              <div class="card stat-card">
+                <div class="card-body text-center">
+                  <i class="fas fa-euro-sign stat-icon text-success"></i>
+                  <div id="revenue" class="stat-value">0€</div>
+                  <div class="stat-label">Ingresos del Mes</div>
+                  <div id="revenueTrend" class="trend-indicator"></div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Reservas -->
-        <div class="col-md-3">
-          <div class="card stat-card">
-            <div class="card-body text-center">
-              <i class="fas fa-calendar-check stat-icon text-info"></i>
-              <div id="bookings" class="stat-value">0</div>
-              <div class="stat-label">Reservas Activas</div>
-              <div id="bookingsTrend" class="trend-indicator"></div>
+            <!-- Reservas -->
+            <div class="col-md-3">
+              <div class="card stat-card">
+                <div class="card-body text-center">
+                  <i class="fas fa-calendar-check stat-icon text-info"></i>
+                  <div id="bookings" class="stat-value">0</div>
+                  <div class="stat-label">Reservas Activas</div>
+                  <div id="bookingsTrend" class="trend-indicator"></div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Check-ins -->
-        <div class="col-md-3">
-          <div class="card stat-card">
-            <div class="card-body text-center">
-              <i class="fas fa-key stat-icon text-warning"></i>
-              <div id="checkins" class="stat-value">0</div>
-              <div class="stat-label">Check-ins Hoy</div>
-              <div id="checkinsTrend" class="trend-indicator"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gráficos -->
-      <div class="row g-4">
-        <!-- Estado del Hotel -->
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-body">
-              <h3 class="card-title">Estado del Hotel</h3>
-              <div class="chart-container">
-                <canvas id="occupancyChart"></canvas>
+            <!-- Check-ins -->
+            <div class="col-md-3">
+              <div class="card stat-card">
+                <div class="card-body text-center">
+                  <i class="fas fa-key stat-icon text-warning"></i>
+                  <div id="checkins" class="stat-value">0</div>
+                  <div class="stat-label">Check-ins Hoy</div>
+                  <div id="checkinsTrend" class="trend-indicator"></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Ingresos por Día -->
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-body">
-              <h3 class="card-title">Ingresos Diarios</h3>
-              <div class="chart-container">
-                <div id="revenueChart"></div>
+        <div class="dashboard-page" data-page="2">
+          <!-- Página 2: Gráficos -->
+          <div class="row g-4 mb-4">
+            <!-- Estado del Hotel -->
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-body">
+                  <h3 class="card-title">Estado del Hotel</h3>
+                  <div class="chart-container">
+                    <canvas id="occupancyChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ingresos por Día -->
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-body">
+                  <h3 class="card-title">Ingresos Diarios</h3>
+                  <div class="chart-container">
+                    <div id="revenueChart"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Próximos Check-ins -->
-      <div class="card mt-4">
-        <div class="card-body">
-          <h3 class="card-title">Próximos Check-ins</h3>
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>Hora</th>
-                  <th>Cliente</th>
-                  <th>Habitación</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody id="upcomingCheckins">
-                <!-- Se llena dinámicamente -->
-              </tbody>
-            </table>
+        <div class="dashboard-page" data-page="3">
+          <!-- Página 3: Próximos Check-ins -->
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title">Próximos Check-ins</h3>
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Hora</th>
+                      <th>Cliente</th>
+                      <th>Habitación</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="upcomingCheckins">
+                    <!-- Se llena dinámicamente -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <!-- Controles de navegación de páginas -->
+        <div class="page-nav text-center mt-4">
+          <button id="prevPage" class="btn btn-secondary me-2">Anterior</button>
+          <span class="page-indicator">Página <span id="currentPage">1</span> de <span id="totalPages">3</span></span>
+          <button id="nextPage" class="btn btn-secondary">Siguiente</button>
         </div>
       </div>
     </div>

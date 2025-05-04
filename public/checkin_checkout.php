@@ -26,47 +26,30 @@ if (!isset($_SESSION['usuario_id'])) {
     <div class="main-content p-4 w-100">
       <h2 class="page-title mb-4">Check-in / Check-out</h2>
 
-      <!-- Tarjetas de estadísticas -->
-      <div class="checkin-stats animate-fade-in">
-        <div class="stat-card">
-          <div class="stat-label">Check-ins Pendientes</div>
-          <div class="stat-value" id="pending-checkins">0</div>
-          <div class="stat-trend">Hoy</div>
+      <div id="checkin-pages">
+        <div class="check-page active" data-page="1">
+          <!-- Estadísticas -->
+          <div class="checkin-stats animate-fade-in">
+            <div class="stat-card">
+              <div class="stat-label">Check-ins Pendientes</div>
+              <div class="stat-value" id="pending-checkins">0</div>
+              <div class="stat-trend">Hoy</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Check-outs Pendientes</div>
+              <div class="stat-value" id="pending-checkouts">0</div>
+              <div class="stat-trend">Hoy</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Completados Hoy</div>
+              <div class="stat-value" id="completed-today">0</div>
+              <div class="stat-trend">Total</div>
+            </div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Check-outs Pendientes</div>
-          <div class="stat-value" id="pending-checkouts">0</div>
-          <div class="stat-trend">Hoy</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Completados Hoy</div>
-          <div class="stat-value" id="completed-today">0</div>
-          <div class="stat-trend">Total</div>
-        </div>
-      </div>
 
-      <!-- Tabs mejorados -->
-      <ul class="nav nav-tabs check-tabs mb-4" id="checkTab" role="tablist">
-        <li class="nav-item">
-          <a class="nav-link active" id="tab-checkin" data-bs-toggle="tab" href="#pane-checkin">
-            <i class="fas fa-sign-in-alt me-2"></i>Check-in
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" id="tab-checkout" data-bs-toggle="tab" href="#pane-checkout">
-            <i class="fas fa-sign-out-alt me-2"></i>Check-out
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" id="tab-cargos" data-bs-toggle="tab" href="#pane-cargos">
-            <i class="fas fa-receipt me-2"></i>Cargos
-          </a>
-        </li>
-      </ul>
-
-      <div class="tab-content animate-fade-in">
-        <!-- Check-in Panel -->
-        <div class="tab-pane fade show active" id="pane-checkin">
+        <div class="check-page" data-page="2">
+          <!-- Reservas pendientes de Check-in -->
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
               <h3 class="mb-0">Reservas pendientes de Check-in</h3>
@@ -93,8 +76,8 @@ if (!isset($_SESSION['usuario_id'])) {
           </div>
         </div>
 
-        <!-- Check-out Panel -->
-        <div class="tab-pane fade" id="pane-checkout">
+        <div class="check-page" data-page="3">
+          <!-- Reservas pendientes de Check-out -->
           <div class="card">
             <div class="card-header">
               <h3 class="mb-0">Reservas pendientes de Check-out</h3>
@@ -117,15 +100,14 @@ if (!isset($_SESSION['usuario_id'])) {
           </div>
         </div>
 
-        <!-- Cargos Panel -->
-        <div class="tab-pane fade" id="pane-cargos">
+        <div class="check-page" data-page="4">
+          <!-- Cargos de la reserva -->
           <div class="card">
             <div class="card-header">
               <h3 class="mb-0">Cargos de la reserva</h3>
             </div>
             <div class="card-body">
               <div id="lista-cargos" class="cargo-list mb-4"></div>
-
               <div class="cargo-form">
                 <h4 class="mb-3">Añadir nuevo cargo</h4>
                 <form id="form-nuevo-cargo" class="row g-3">
@@ -144,6 +126,12 @@ if (!isset($_SESSION['usuario_id'])) {
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="page-nav text-center mt-4">
+          <button id="prevChk" class="btn btn-secondary me-2">Anterior</button>
+          <span class="page-indicator">Página <span id="currentChkPage">1</span> de <span id="totalChkPages">4</span></span>
+          <button id="nextChk" class="btn btn-secondary">Siguiente</button>
         </div>
       </div>
     </div>

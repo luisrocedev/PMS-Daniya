@@ -12,8 +12,10 @@ if (!isset($_SESSION['usuario_id'])) {
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestión de Empleados - PMS Daniya Denia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -22,106 +24,176 @@ if (!isset($_SESSION['usuario_id'])) {
     <!-- Incluir navbar -->
     <?php include __DIR__ . '/../partials/navbar.php'; ?>
 
-    <div style="display:flex; margin-top:1rem;">
+    <div class="d-flex" style="margin-top:1rem;">
         <!-- Incluir sidebar -->
         <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
-        <div class="main-content">
-            <h2 class="page-title">Gestión de Empleados</h2>
+        <div class="main-content p-4 w-100">
+            <h2 class="page-title mb-4">Gestión de Empleados</h2>
 
-            <!-- FILTROS / BÚSQUEDA -->
-            <div class="card">
-                <h3>Buscar Empleados</h3>
-                <form onsubmit="event.preventDefault(); listarEmpleadosPaginado(1);">
-                    <label for="buscarTxt">Texto (Nombre, Apellidos, DNI):</label>
-                    <input type="text" id="buscarTxt" placeholder="Ej: 'López'">
+            <div id="empleados-pages">
+                <div class="content-page active" data-page="1">
+                    <!-- FILTROS / BÚSQUEDA -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title mb-3">Buscar Empleados</h3>
+                            <form onsubmit="event.preventDefault(); listarEmpleadosPaginado(1);">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="buscarTxt" class="form-label">Texto (Nombre, Apellidos, DNI):</label>
+                                        <input type="text" id="buscarTxt" class="form-control" placeholder="Ej: 'López'">
+                                    </div>
 
-                    <label for="buscarRol">Rol:</label>
-                    <select id="buscarRol">
-                        <option value="">Todos</option>
-                        <!-- Se llenará dinámicamente en cargarRolesYDeps(), pero dejamos esta opción por defecto -->
-                    </select>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="buscarRol" class="form-label">Rol:</label>
+                                        <select id="buscarRol" class="form-select">
+                                            <option value="">Todos</option>
+                                            <!-- Se llenará dinámicamente en cargarRolesYDeps() -->
+                                        </select>
+                                    </div>
 
-                    <label for="buscarDep">Departamento:</label>
-                    <select id="buscarDep">
-                        <option value="">Todos</option>
-                        <!-- Igualmente se llenará dinámicamente -->
-                    </select>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="buscarDep" class="form-label">Departamento:</label>
+                                        <select id="buscarDep" class="form-select">
+                                            <option value="">Todos</option>
+                                            <!-- Se llenará dinámicamente -->
+                                        </select>
+                                    </div>
+                                </div>
 
-                    <button type="submit" class="btn">Aplicar Filtros</button>
-                </form>
-            </div>
-
-            <!-- TABLA DE EMPLEADOS -->
-            <div class="card">
-                <h3>Listado de Empleados</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Apellidos</th>
-                            <th>DNI</th>
-                            <th>Teléfono</th>
-                            <th>Email</th>
-                            <th>ID Rol</th>
-                            <th>ID Depto.</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-empleados">
-                        <!-- Se llena con JS -->
-                    </tbody>
-                </table>
-
-                <!-- Contenedor para la paginación -->
-                <div id="paginacionEmpleados" style="margin-top: 1rem;">
-                    <!-- Aquí se renderizan botones "Anterior", "Siguiente", etc. -->
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search me-2"></i>Aplicar Filtros
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- FORMULARIO PARA CREAR UN NUEVO EMPLEADO -->
-            <div class="card">
-                <h3>Crear Nuevo Empleado</h3>
-                <form onsubmit="event.preventDefault(); crearEmpleado();">
-                    <label for="nombre">Nombre:</label>
-                    <input type="text" id="nombre" required>
+                <div class="content-page" data-page="2">
+                    <!-- TABLA DE EMPLEADOS -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title mb-3">Listado de Empleados</h3>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Apellidos</th>
+                                            <th>DNI</th>
+                                            <th>Teléfono</th>
+                                            <th>Email</th>
+                                            <th>ID Rol</th>
+                                            <th>ID Depto.</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-empleados">
+                                        <!-- Se llena con JS -->
+                                    </tbody>
+                                </table>
+                            </div>
 
-                    <label for="apellidos">Apellidos:</label>
-                    <input type="text" id="apellidos" required>
+                            <!-- Contenedor para la paginación API -->
+                            <div id="paginacionEmpleados" style="margin-top: 1rem;">
+                                <!-- Aquí se renderizan botones "Anterior", "Siguiente", etc. -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <label for="dni">DNI:</label>
-                    <input type="text" id="dni" required>
+                <div class="content-page" data-page="3">
+                    <!-- FORMULARIO PARA CREAR UN NUEVO EMPLEADO -->
+                    <div class="card">
+                        <div class="card-body p-2">
+                            <h3 class="card-title mb-2 text-center">Crear Nuevo Empleado</h3>
+                            <div class="row justify-content-center">
+                                <div class="col-md-12">
+                                    <form id="formCrearEmpleado" onsubmit="event.preventDefault(); crearEmpleado();" class="needs-validation" novalidate>
+                                        <div class="row g-1">
+                                            <div class="col-md-6 mb-1">
+                                                <label for="nombre" class="form-label small">Nombre:</label>
+                                                <input type="text" id="nombre" class="form-control form-control-sm" required>
+                                            </div>
 
-                    <label for="telefono">Teléfono:</label>
-                    <input type="text" id="telefono">
+                                            <div class="col-md-6 mb-1">
+                                                <label for="apellidos" class="form-label small">Apellidos:</label>
+                                                <input type="text" id="apellidos" class="form-control form-control-sm" required>
+                                            </div>
+                                        </div>
 
-                    <label for="email">Email:</label>
-                    <input type="email" id="email">
+                                        <div class="row g-1">
+                                            <div class="col-md-4 mb-1">
+                                                <label for="dni" class="form-label small">DNI:</label>
+                                                <input type="text" id="dni" class="form-control form-control-sm" required>
+                                            </div>
 
-                    <label for="direccion">Dirección:</label>
-                    <input type="text" id="direccion">
+                                            <div class="col-md-4 mb-1">
+                                                <label for="telefono" class="form-label small">Teléfono:</label>
+                                                <input type="text" id="telefono" class="form-control form-control-sm">
+                                            </div>
 
-                    <label for="fecha_contrat">Fecha de Contratación:</label>
-                    <input type="date" id="fecha_contrat">
+                                            <div class="col-md-4 mb-1">
+                                                <label for="email" class="form-label small">Email:</label>
+                                                <input type="email" id="email" class="form-control form-control-sm">
+                                            </div>
+                                        </div>
 
-                    <label for="id_rol">Rol:</label>
-                    <select id="id_rol">
-                        <!-- Se cargará dinámicamente con cargarRolesYDeps() -->
-                    </select>
+                                        <div class="row g-1">
+                                            <div class="col-md-12 mb-1">
+                                                <label for="direccion" class="form-label small">Dirección:</label>
+                                                <input type="text" id="direccion" class="form-control form-control-sm">
+                                            </div>
+                                        </div>
 
-                    <label for="id_departamento">Departamento:</label>
-                    <select id="id_departamento">
-                        <!-- Se cargará dinámicamente -->
-                    </select>
+                                        <div class="row g-1">
+                                            <div class="col-md-4 mb-1">
+                                                <label for="fecha_contrat" class="form-label small">F. Contratación:</label>
+                                                <input type="date" id="fecha_contrat" class="form-control form-control-sm">
+                                            </div>
 
-                    <button type="submit" class="btn">Crear</button>
-                </form>
+                                            <div class="col-md-4 mb-1">
+                                                <label for="id_rol" class="form-label small">Rol:</label>
+                                                <select id="id_rol" class="form-select form-select-sm" required>
+                                                    <option value="" disabled selected>Seleccione rol</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-4 mb-1">
+                                                <label for="id_departamento" class="form-label small">Departamento:</label>
+                                                <select id="id_departamento" class="form-select form-select-sm" required>
+                                                    <option value="" disabled selected>Seleccione departamento</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-2 d-grid">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-user-plus me-1"></i>Crear Empleado
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controles de navegación de páginas - estilo consistente con otras secciones -->
+                <div class="page-nav text-center mt-4">
+                    <button id="prevEmp" class="btn btn-secondary me-2">Anterior</button>
+                    <span class="page-indicator">Página <span id="currentEmpPage">1</span> de <span id="totalEmpPages">3</span></span>
+                    <button id="nextEmp" class="btn btn-secondary">Siguiente</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Normalmente, tu main.js iría aparte; para demo, mostramos inline -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         // ================== DESPLEGABLES DINÁMICOS DE ROL Y DEPARTAMENTO ==================
         function cargarRolesYDeps() {
@@ -210,23 +282,36 @@ if (!isset($_SESSION['usuario_id'])) {
                     if (!tbody) return;
                     tbody.innerHTML = '';
 
-                    data.forEach(emp => {
+                    if (data.length === 0) {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `
-              <td>${emp.id_empleado}</td>
-              <td>${emp.nombre}</td>
-              <td>${emp.apellidos}</td>
-              <td>${emp.dni}</td>
-              <td>${emp.telefono || ''}</td>
-              <td>${emp.email || ''}</td>
-              <td>${emp.id_rol}</td>
-              <td>${emp.id_departamento}</td>
-              <td>
-                <button class="btn" onclick="eliminarEmpleado(${emp.id_empleado})">Eliminar</button>
-              </td>
-            `;
+                        tr.innerHTML = '<td colspan="9" class="text-center">No se encontraron empleados con los filtros seleccionados</td>';
                         tbody.appendChild(tr);
-                    });
+                    } else {
+                        data.forEach(emp => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${emp.id_empleado}</td>
+                                <td>${emp.nombre}</td>
+                                <td>${emp.apellidos}</td>
+                                <td>${emp.dni}</td>
+                                <td>${emp.telefono || ''}</td>
+                                <td>${emp.email || ''}</td>
+                                <td>${emp.id_rol}</td>
+                                <td>${emp.id_departamento}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-warning" onclick="editarEmpleado(${emp.id_empleado})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="eliminarEmpleado(${emp.id_empleado})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
 
                     // Renderizar controles de paginación
                     renderPaginacionEmpleados(page, limit, total);
@@ -244,8 +329,8 @@ if (!isset($_SESSION['usuario_id'])) {
             // Botón Anterior
             if (page > 1) {
                 const btnPrev = document.createElement('button');
-                btnPrev.classList.add('btn');
-                btnPrev.textContent = 'Anterior';
+                btnPrev.classList.add('btn', 'btn-outline-primary', 'me-2');
+                btnPrev.innerHTML = '<i class="fas fa-chevron-left me-1"></i> Anterior';
                 btnPrev.onclick = () => listarEmpleadosPaginado(page - 1);
                 divPag.appendChild(btnPrev);
             }
@@ -259,8 +344,8 @@ if (!isset($_SESSION['usuario_id'])) {
             // Botón Siguiente
             if (page < totalPages) {
                 const btnNext = document.createElement('button');
-                btnNext.classList.add('btn');
-                btnNext.textContent = 'Siguiente';
+                btnNext.classList.add('btn', 'btn-outline-primary', 'ms-2');
+                btnNext.innerHTML = 'Siguiente <i class="fas fa-chevron-right ms-1"></i>';
                 btnNext.onclick = () => listarEmpleadosPaginado(page + 1);
                 divPag.appendChild(btnNext);
             }
@@ -336,13 +421,59 @@ if (!isset($_SESSION['usuario_id'])) {
                 .catch(err => console.error(err));
         }
 
+        // ================== EDICIÓN DE EMPLEADO ==================
+        function editarEmpleado(idEmp) {
+            alert('Función de edición en desarrollo');
+            // Esta función se implementaría usando un modal similar al de clientes
+        }
+
         // ================== EVENTO DE CARGA DE LA PÁGINA ==================
         document.addEventListener('DOMContentLoaded', () => {
             cargarRolesYDeps(); // Carga desplegables de roles y departamentos
             listarEmpleadosPaginado(1); // Muestra la primera página
+            initializeEmpleadosPageNav(); // Inicializar paginación interna
         });
-    </script>
 
+        // ================== PAGINACIÓN INTERNA ==================
+        function initializeEmpleadosPageNav() {
+            const pages = document.querySelectorAll('#empleados-pages .content-page');
+            const prevBtn = document.getElementById('prevEmp');
+            const nextBtn = document.getElementById('nextEmp');
+            const currentPageEl = document.getElementById('currentEmpPage');
+            const totalPagesEl = document.getElementById('totalEmpPages');
+            let current = 0;
+
+            // Establecer el total de páginas
+            if (totalPagesEl) totalPagesEl.textContent = pages.length;
+
+            function updateButtons() {
+                if (prevBtn) prevBtn.disabled = current === 0;
+                if (nextBtn) nextBtn.disabled = current === pages.length - 1;
+                if (currentPageEl) currentPageEl.textContent = current + 1;
+            }
+
+            function showPage(index) {
+                pages[current].classList.remove('active');
+                current = index;
+                pages[current].classList.add('active');
+                updateButtons();
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    if (current > 0) showPage(current - 1);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (current < pages.length - 1) showPage(current + 1);
+                });
+            }
+
+            updateButtons();
+        }
+    </script>
 </body>
 
 </html>

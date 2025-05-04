@@ -28,75 +28,90 @@ if (!isset($_SESSION['usuario_id'])) {
         <div class="main-content">
             <h2 class="page-title">Gestión de Clientes</h2>
 
-            <!-- Filtros -->
-            <div class="card mb-3">
-                <h3>Buscar Clientes</h3>
-                <form onsubmit="event.preventDefault(); listarClientesPaginado(1);">
-                    <label for="searchCli">Buscar (Nombre/Apellidos/DNI):</label>
-                    <input type="text" id="searchCli" class="form-control">
-                    <button type="submit" class="btn btn-primary mt-2">Aplicar Filtro</button>
-                </form>
-            </div>
-
-            <!-- Tabla y paginación -->
-            <div class="card mb-3">
-                <h3>Listado de Clientes</h3>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Apellidos</th>
-                            <th>DNI</th>
-                            <th>Email</th>
-                            <th>Teléfono</th>
-                            <th>Estado Funnel</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-clientes">
-                        <!-- Se llena con JS -->
-                    </tbody>
-                </table>
-                <div id="paginacionClientes" style="margin-top:1rem;">
-                    <!-- Botones Anterior/Siguiente -->
+            <div id="clientes-pages">
+                <div class="content-page active" data-page="1">
+                    <!-- Filtros -->
+                    <div class="card">
+                        <h3>Buscar Clientes</h3>
+                        <form onsubmit="event.preventDefault(); listarClientesPaginado(1);">
+                            <label for="searchCli">Buscar (Nombre/Apellidos/DNI):</label>
+                            <input type="text" id="searchCli" class="form-control">
+                            <button type="submit" class="btn btn-primary mt-2">Aplicar Filtro</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Formulario de creación -->
-            <div class="card">
-                <h3>Crear Cliente</h3>
-                <form onsubmit="event.preventDefault(); crearCliente();">
-                    <label for="nombreCli">Nombre:</label>
-                    <input type="text" id="nombreCli" class="form-control" required>
+                <div class="content-page" data-page="2">
+                    <!-- Tabla y paginación -->
+                    <div class="card">
+                        <h3>Listado de Clientes</h3>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Apellidos</th>
+                                    <th>DNI</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Estado Funnel</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-clientes">
+                                <!-- Se llena con JS -->
+                            </tbody>
+                        </table>
+                        <div id="paginacionClientes" style="margin-top:1rem;">
+                            <!-- Botones Anterior/Siguiente -->
+                        </div>
+                    </div>
+                </div>
 
-                    <label for="apellidosCli">Apellidos:</label>
-                    <input type="text" id="apellidosCli" class="form-control" required>
+                <div class="content-page" data-page="3">
+                    <!-- Formulario de creación -->
+                    <div class="card">
+                        <h3>Crear Cliente</h3>
+                        <form onsubmit="event.preventDefault(); crearCliente();">
+                            <label for="nombreCli">Nombre:</label>
+                            <input type="text" id="nombreCli" class="form-control" required>
 
-                    <label for="dniCli">DNI:</label>
-                    <input type="text" id="dniCli" class="form-control" required>
+                            <label for="apellidosCli">Apellidos:</label>
+                            <input type="text" id="apellidosCli" class="form-control" required>
 
-                    <label for="emailCli">Email:</label>
-                    <input type="email" id="emailCli" class="form-control">
+                            <label for="dniCli">DNI:</label>
+                            <input type="text" id="dniCli" class="form-control" required>
 
-                    <label for="telCli">Teléfono:</label>
-                    <input type="text" id="telCli" class="form-control">
+                            <label for="emailCli">Email:</label>
+                            <input type="email" id="emailCli" class="form-control">
 
-                    <label for="dirCli">Dirección:</label>
-                    <input type="text" id="dirCli" class="form-control">
+                            <label for="telCli">Teléfono:</label>
+                            <input type="text" id="telCli" class="form-control">
 
-                    <!-- NUEVO: Selector para Estado Funnel -->
-                    <label for="estado_funnel">Estado Funnel:</label>
-                    <select id="estado_funnel" class="form-select">
-                        <option value="">Selecciona un estado (opcional)</option>
-                        <option value="Nuevo">Nuevo</option>
-                        <option value="Interesado">Interesado</option>
-                        <option value="En Negociacion">En Negociacion</option>
-                        <option value="Cerrado">Cerrado</option>
-                    </select>
+                            <label for="dirCli">Dirección:</label>
+                            <input type="text" id="dirCli" class="form-control">
 
-                    <button type="submit" class="btn btn-success mt-2">Crear</button>
-                </form>
+                            <!-- NUEVO: Selector para Estado Funnel -->
+                            <label for="estado_funnel">Estado Funnel:</label>
+                            <select id="estado_funnel" class="form-select">
+                                <option value="">Selecciona un estado (opcional)</option>
+                                <option value="Nuevo">Nuevo</option>
+                                <option value="Interesado">Interesado</option>
+                                <option value="En Negociacion">En Negociacion</option>
+                                <option value="Cerrado">Cerrado</option>
+                            </select>
+
+                            <button type="submit" class="btn btn-success mt-2">Crear</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Controles de navegación de páginas -->
+                <div class="page-nav text-center mt-4">
+                    <button id="prevCli" class="btn btn-secondary me-2">Anterior</button>
+                    <span class="page-indicator">Página <span id="currentCliPage">1</span> de <span id="totalCliPages">3</span></span>
+                    <button id="nextCli" class="btn btn-secondary">Siguiente</button>
+                </div>
             </div>
 
             <!-- Modal de Edición -->
@@ -389,7 +404,48 @@ if (!isset($_SESSION['usuario_id'])) {
         // ====================== CARGA INICIAL ======================
         document.addEventListener('DOMContentLoaded', () => {
             listarClientesPaginado(1);
+            initializeClientesPagesNav(); // Inicializar paginación interna
         });
+
+        // Función de paginación interna para la sección de clientes
+        function initializeClientesPagesNav() {
+            const pages = document.querySelectorAll('#clientes-pages .content-page');
+            const prevBtn = document.getElementById('prevCli');
+            const nextBtn = document.getElementById('nextCli');
+            const currentPageEl = document.getElementById('currentCliPage');
+            const totalPagesEl = document.getElementById('totalCliPages');
+            let current = 0;
+
+            // Establecer el total de páginas
+            if (totalPagesEl) totalPagesEl.textContent = pages.length;
+
+            function updateButtons() {
+                if (prevBtn) prevBtn.disabled = current === 0;
+                if (nextBtn) nextBtn.disabled = current === pages.length - 1;
+                if (currentPageEl) currentPageEl.textContent = current + 1;
+            }
+
+            function showPage(index) {
+                pages[current].classList.remove('active');
+                current = index;
+                pages[current].classList.add('active');
+                updateButtons();
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    if (current > 0) showPage(current - 1);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (current < pages.length - 1) showPage(current + 1);
+                });
+            }
+
+            updateButtons();
+        }
     </script>
 </body>
 

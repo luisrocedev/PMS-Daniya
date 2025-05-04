@@ -29,47 +29,30 @@ if (!isset($_SESSION['usuario_id'])) {
         <div class="main-content p-4 w-100">
             <h2 class="page-title mb-4">Panel de Reportes</h2>
 
-            <!-- Tarjetas de estadísticas generales -->
-            <div class="report-stats animate-fade-in">
-                <div class="stat-card">
-                    <div class="stat-label">Total Facturación</div>
-                    <div class="stat-value" id="total-revenue">0€</div>
-                    <div class="stat-trend">Este mes</div>
+            <div id="reports-pages">
+                <div class="report-page active" data-page="1">
+                    <!-- Tarjetas de estadísticas generales -->
+                    <div class="report-stats animate-fade-in">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Facturación</div>
+                            <div class="stat-value" id="total-revenue">0€</div>
+                            <div class="stat-trend">Este mes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Ocupación Media</div>
+                            <div class="stat-value" id="avg-occupancy">0%</div>
+                            <div class="stat-trend">Últimos 30 días</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Reservas Totales</div>
+                            <div class="stat-value" id="total-bookings">0</div>
+                            <div class="stat-trend">Este mes</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Ocupación Media</div>
-                    <div class="stat-value" id="avg-occupancy">0%</div>
-                    <div class="stat-trend">Últimos 30 días</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Reservas Totales</div>
-                    <div class="stat-value" id="total-bookings">0</div>
-                    <div class="stat-trend">Este mes</div>
-                </div>
-            </div>
 
-            <!-- Tabs de tipos de reportes -->
-            <ul class="nav nav-tabs report-tabs mb-4 animate-fade-in" id="reportTabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="financial-tab" data-bs-toggle="tab" href="#financial">
-                        <i class="fas fa-chart-line me-2"></i>Financiero
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="occupancy-tab" data-bs-toggle="tab" href="#occupancy">
-                        <i class="fas fa-bed me-2"></i>Ocupación
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="reservations-tab" data-bs-toggle="tab" href="#reservations">
-                        <i class="fas fa-calendar-check me-2"></i>Reservas
-                    </a>
-                </li>
-            </ul>
-
-            <div class="tab-content animate-fade-in" id="reportsContent">
-                <!-- Panel Financiero -->
-                <div class="tab-pane fade show active" id="financial">
+                <div class="report-page" data-page="2">
+                    <!-- Panel Financiero -->
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="mb-0">Ingresos por Período</h3>
@@ -99,8 +82,8 @@ if (!isset($_SESSION['usuario_id'])) {
                     </div>
                 </div>
 
-                <!-- Panel Ocupación -->
-                <div class="tab-pane fade" id="occupancy">
+                <div class="report-page" data-page="3">
+                    <!-- Panel Ocupación -->
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="mb-0">Tasa de Ocupación</h3>
@@ -136,8 +119,8 @@ if (!isset($_SESSION['usuario_id'])) {
                     </div>
                 </div>
 
-                <!-- Panel Reservas -->
-                <div class="tab-pane fade" id="reservations">
+                <div class="report-page" data-page="4">
+                    <!-- Panel Reservas -->
                     <div class="card mb-4">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="mb-0">Análisis de Reservas</h3>
@@ -176,6 +159,12 @@ if (!isset($_SESSION['usuario_id'])) {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="page-nav text-center mt-4">
+                    <button id="prevRep" class="btn btn-secondary me-2">Anterior</button>
+                    <span class="page-indicator">Página <span id="currentRepPage">1</span> de <span id="totalRepPages">4</span></span>
+                    <button id="nextRep" class="btn btn-secondary">Siguiente</button>
                 </div>
             </div>
         </div>

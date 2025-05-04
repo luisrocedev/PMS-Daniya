@@ -10,6 +10,7 @@ if (!isset($_SESSION['usuario_id'])) {
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestión de Reservas - PMS Daniya Denia</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -19,6 +20,25 @@ if (!isset($_SESSION['usuario_id'])) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- CSS Personalizado -->
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .content-page {
+            display: none;
+        }
+
+        .content-page.active {
+            display: block;
+        }
+
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .form-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 
 <body>
@@ -27,15 +47,11 @@ if (!isset($_SESSION['usuario_id'])) {
     <div class="d-flex" style="margin-top:1rem;">
         <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
-        <div class="main-content container-fluid">
-            <div class="row mb-4">
-                <div class="col">
-                    <h2 class="page-title">Gestión de Reservas</h2>
-                </div>
-            </div>
+        <div class="main-content p-4 w-100">
+            <h2 class="page-title mb-4">Gestión de Reservas</h2>
 
-            <!-- Pestañas para Lista/Creación y Calendario -->
-            <ul class="nav nav-tabs" id="reservasTab" role="tablist">
+            <!-- Pestañas principales para Lista/Calendario -->
+            <ul class="nav nav-tabs mb-4" id="reservasTab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="lista-tab" data-bs-toggle="tab" data-bs-target="#lista">
                         <i class="fas fa-list me-2"></i>Lista y Creación
@@ -51,78 +67,178 @@ if (!isset($_SESSION['usuario_id'])) {
             <div class="tab-content" id="reservasTabContent">
                 <!-- Pestaña Lista y Creación -->
                 <div class="tab-pane fade show active" id="lista" role="tabpanel">
-                    <!-- Filtros de búsqueda -->
-                    <div class="card mt-4">
-                        <div class="card-body">
-                            <h3 class="card-title mb-4">Buscar Reservas</h3>
-                            <form onsubmit="event.preventDefault(); listarReservasPaginado(1);" class="row g-3">
-                                <div class="col-md-3">
-                                    <label for="searchRes" class="form-label">Búsqueda:</label>
-                                    <input type="text" id="searchRes" class="form-control" placeholder="ID o Cliente">
+                    <div id="reservas-pages">
+                        <!-- PÁGINA 1: FILTROS Y LISTADO -->
+                        <div class="content-page active" data-page="1">
+                            <!-- Filtros de búsqueda -->
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h3 class="card-title mb-3">Buscar Reservas</h3>
+                                    <form onsubmit="event.preventDefault(); listarReservasPaginado(1);" class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="searchRes" class="form-label">Búsqueda:</label>
+                                            <input type="text" id="searchRes" class="form-control" placeholder="ID o Cliente">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="estadoRes" class="form-label">Estado:</label>
+                                            <select id="estadoRes" class="form-select">
+                                                <option value="">Todos</option>
+                                                <option value="Pendiente">Pendiente</option>
+                                                <option value="Confirmada">Confirmada</option>
+                                                <option value="Cancelada">Cancelada</option>
+                                                <option value="CheckIn">Check-in</option>
+                                                <option value="CheckOut">Check-out</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="fechaInicioFiltro" class="form-label">Fecha Desde:</label>
+                                            <input type="date" id="fechaInicioFiltro" class="form-control">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="fechaFinFiltro" class="form-label">Fecha Hasta:</label>
+                                            <input type="date" id="fechaFinFiltro" class="form-control">
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-search me-2"></i>Filtrar
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
-                                <div class="col-md-3">
-                                    <label for="estadoRes" class="form-label">Estado:</label>
-                                    <select id="estadoRes" class="form-select">
-                                        <option value="">Todos</option>
-                                        <option value="Pendiente">Pendiente</option>
-                                        <option value="Confirmada">Confirmada</option>
-                                        <option value="Cancelada">Cancelada</option>
-                                        <option value="CheckIn">Check-in</option>
-                                        <option value="CheckOut">Check-out</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="fechaInicioFiltro" class="form-label">Fecha Desde:</label>
-                                    <input type="date" id="fechaInicioFiltro" class="form-control">
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="fechaFinFiltro" class="form-label">Fecha Hasta:</label>
-                                    <input type="date" id="fechaFinFiltro" class="form-control">
-                                </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-search me-2"></i>Filtrar
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+                            </div>
 
-                    <!-- Tabla de reservas -->
-                    <div class="card mt-4">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h3 class="card-title mb-0">Listado de Reservas</h3>
-                                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaReserva">
-                                    <i class="fas fa-plus me-2"></i>Nueva Reserva
-                                </button>
+                            <!-- Tabla de reservas con scroll interno -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h3 class="card-title mb-0">Listado de Reservas</h3>
+                                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaReserva">
+                                            <i class="fas fa-plus me-2"></i>Nueva Reserva
+                                        </button>
+                                    </div>
+                                    <div class="table-container">
+                                        <table class="table table-hover">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Cliente</th>
+                                                    <th>Habitación</th>
+                                                    <th>Entrada</th>
+                                                    <th>Salida</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tabla-reservas">
+                                                <!-- Se llena dinámicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div id="paginacionReservas" class="mt-3"></div>
+                                </div>
                             </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Cliente</th>
-                                            <th>Habitación</th>
-                                            <th>Entrada</th>
-                                            <th>Salida</th>
-                                            <th>Estado</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabla-reservas">
-                                        <!-- Se llena dinámicamente -->
-                                    </tbody>
-                                </table>
+                        </div>
+
+                        <!-- PÁGINA 2: CREACIÓN CON SCROLL INTERNO -->
+                        <div class="content-page" data-page="2">
+                            <!-- Formulario integrado para nueva reserva con scroll interno -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="card-title mb-4 text-center">Nueva Reserva</h3>
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-10">
+                                            <div class="form-container">
+                                                <form id="formNuevaReservaIntegrado" onsubmit="event.preventDefault(); crearReservaIntegrada();">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="id_cliente_integrado" class="form-label">ID Cliente:</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                                                <input type="number" id="id_cliente_integrado" class="form-control" required>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="id_habitacion_integrado" class="form-label">ID Habitación:</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text"><i class="fas fa-bed"></i></span>
+                                                                <input type="number" id="id_habitacion_integrado" class="form-control" required>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="fecha_entrada_integrado" class="form-label">Fecha Entrada:</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                                                                <input type="date" id="fecha_entrada_integrado" class="form-control" required>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="fecha_salida_integrado" class="form-label">Fecha Salida:</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text"><i class="fas fa-calendar-minus"></i></span>
+                                                                <input type="date" id="fecha_salida_integrado" class="form-control" required>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-12 mb-3">
+                                                            <label for="estado_integrado" class="form-label">Estado:</label>
+                                                            <select id="estado_integrado" class="form-select">
+                                                                <option value="Pendiente">Pendiente</option>
+                                                                <option value="Confirmada">Confirmada</option>
+                                                                <option value="Cancelada">Cancelada</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <!-- Campos adicionales para la reserva -->
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="num_personas" class="form-label">Número de Personas:</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text"><i class="fas fa-users"></i></span>
+                                                                <input type="number" id="num_personas" class="form-control" min="1" value="1">
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-6 mb-3">
+                                                            <label for="precio_total" class="form-label">Precio Total:</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text"><i class="fas fa-euro-sign"></i></span>
+                                                                <input type="number" id="precio_total" class="form-control" step="0.01">
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-12 mb-3">
+                                                            <label for="observaciones" class="form-label">Observaciones:</label>
+                                                            <textarea id="observaciones" class="form-control" rows="3" placeholder="Peticiones especiales, observaciones..."></textarea>
+                                                        </div>
+
+                                                        <div class="col-12">
+                                                            <button type="submit" class="btn btn-success w-100">
+                                                                <i class="fas fa-plus-circle me-2"></i>Crear Reserva
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div id="paginacionReservas" class="mt-3"></div>
+                        </div>
+
+                        <!-- Controles de navegación de páginas -->
+                        <div class="page-nav text-center mt-4">
+                            <button id="prevRes" class="btn btn-secondary me-2">Anterior</button>
+                            <span class="page-indicator">Página <span id="currentResPage">1</span> de <span id="totalResPages">2</span></span>
+                            <button id="nextRes" class="btn btn-secondary">Siguiente</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Pestaña Calendario -->
                 <div class="tab-pane fade" id="calendario" role="tabpanel">
-                    <div class="card mt-4">
+                    <div class="card">
                         <div class="card-body">
                             <div class="row mb-4">
                                 <div class="col-md-4">

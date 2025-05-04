@@ -90,19 +90,28 @@ C:\xampp\htdocs\PMS
 ### 8. Reportes
 
 - **Generación de Reportes**: Crear reportes de facturación, ocupación histórica, reservas canceladas, etc.
+- **Reportes Avanzados**: Gráficos interactivos, exportación en CSV/PDF/XLSX, estadísticas en tiempo real y filtros avanzados.
+
+## Novedades Recientes (v1.2.0 - 4 de mayo de 2025)
+
+- Nuevo módulo de reportes avanzados con gráficos y exportación de datos.
+- Mejoras en la gestión de incidencias de mantenimiento y estadísticas en tiempo real.
+- Automatización de backups y scripts de despliegue.
+- Optimización de consultas SQL y modularización del código.
+- Refuerzo de seguridad: validación y sanitización de datos, permisos por rol.
+- Mejoras visuales y feedback en la interfaz.
 
 ## Estado Actual del Proyecto
 
-El proyecto está actualmente en desarrollo. Las funcionalidades básicas están implementadas, pero hay varias áreas que requieren mejoras y optimizaciones.
+El proyecto cuenta con todas las funcionalidades principales implementadas y en uso. Se han añadido módulos avanzados de reportes, mejoras de rendimiento, seguridad y automatización. El sistema está en constante evolución y optimización.
 
 ## Futuras Mejoras
 
-1. **Mejora de la Interfaz de Usuario**: Rediseñar la interfaz para hacerla más intuitiva y fácil de usar.
-2. **Optimización del Rendimiento**: Mejorar el rendimiento de las consultas a la base de datos y la carga de datos en la interfaz.
-3. **Seguridad**: Implementar medidas adicionales de seguridad para proteger los datos sensibles.
-4. **Notificaciones**: Añadir un sistema de notificaciones para alertar a los empleados sobre eventos importantes.
-5. **Integración con Sistemas Externos**: Integrar el sistema con otros servicios como sistemas de pago en línea, plataformas de reservas, etc.
-6. **Análisis de Datos**: Implementar herramientas de análisis de datos para proporcionar información valiosa sobre el rendimiento del hotel.
+1. **Sistema de notificaciones en tiempo real** para empleados y eventos importantes.
+2. **Integración con plataformas externas** de reservas y sistemas de pago.
+3. **Dashboard personalizable** y reportes a medida.
+4. **Mejoras continuas en la interfaz de usuario** y experiencia de usuario.
+5. **Análisis de datos avanzado** para la toma de decisiones.
 
 ## Automatización de copias de seguridad con cron
 
