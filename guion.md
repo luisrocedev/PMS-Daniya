@@ -4,7 +4,6 @@
 ## Introducción
 
 Hola, soy [tu nombre] y en este vídeo voy a presentar mi proyecto PMS-Daniya, un sistema de gestión hotelera desarrollado principalmente en PHP. A lo largo de la presentación, responderé a preguntas técnicas sobre cómo está construido el proyecto y qué decisiones he tomado.
-
 ---
 
 ## 1. Programación
