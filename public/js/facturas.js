@@ -10,8 +10,11 @@ function initializeApp() {
     listarFacturasPaginado(1);
     cargarSelectReservas();
     
-    // Inicializar campos de fecha
-    document.getElementById('fechaF').valueAsDate = new Date();
+    // Inicializar campos de fecha de forma segura
+    const inputFecha = document.getElementById('fechaF');
+    if (inputFecha) {
+        inputFecha.valueAsDate = new Date();
+    }
     
     // Auto-actualización cada 5 minutos
     setInterval(() => {

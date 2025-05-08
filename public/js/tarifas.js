@@ -43,10 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Solo añade event listeners si los elementos existen
-    const filtro = document.getElementById('filtroEstado');
-    if (filtro) {
-        filtro.addEventListener('change', () => cargarTarifas(1));
+    // Listener para filtro de estado
+    const filtroEstado = document.getElementById('filtroEstado');
+    if (filtroEstado) {
+        filtroEstado.addEventListener('change', () => cargarTarifas(1));
+    }
+
+    // Listener para filtro de tipo de habitación (unificar id)
+    const filtroTipo = document.getElementById('filtroTipo') || document.getElementById('filtro-tipo') || document.getElementById('filtroTipoHab');
+    if (filtroTipo) {
+        filtroTipo.addEventListener('change', () => cargarTarifas(1));
     }
 
     cargarTarifas(1);
