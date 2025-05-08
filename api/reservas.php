@@ -17,6 +17,63 @@ $limit = $_GET['limit'] ?? 10;
 $estado = $_GET['estado'] ?? '';
 $search = $_GET['search'] ?? '';
 
+// Obtener por ID (GET /api/reservas.php?id=XX)
+if (isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+    $stmt = $pdo->prepare("SELECT * FROM reservas WHERE id_reserva = :id");
+    $stmt->execute([':id' => $id]);
+    $reserva = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($reserva) {
+        echo json_encode($reserva);
+    } else {
+        echo json_encode(['error' => 'No se encontró la reserva']);
+    }
+    exit;
+}
+
+// Actualizar reserva (PUT /api/reservas.php?id=XX)
+if ($_SERVER['REQUEST_METHOD'] === 'PUT' && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    $data = [];
+    if (stripos($contentType, 'application/json') !== false) {
+        $data = json_decode(file_get_contents('php://input'), true);
+    } else {
+        parse_str(file_get_contents('php://input'), $data);
+    }
+    // Solo permitimos actualizar ciertos campos
+    $campos = ['id_cliente', 'id_habitacion', 'fecha_entrada', 'fecha_salida', 'estado_reserva'];
+    $set = [];
+    $params = [':id' => $id];
+    foreach ($campos as $campo) {
+        if (isset($data[$campo])) {
+            $set[] = "$campo = :$campo";
+            $params[":$campo"] = $data[$campo];
+        }
+    }
+    if ($set) {
+        $sql = "UPDATE reservas SET " . implode(',', $set) . " WHERE id_reserva = :id";
+        $stmt = $pdo->prepare($sql);
+        $ok = $stmt->execute($params);
+        echo json_encode(['success' => $ok, 'msg' => $ok ? 'Reserva actualizada correctamente' : 'No se pudo actualizar la reserva']);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'No hay campos para actualizar']);
+    }
+    exit;
+}
+
+// Eliminar reserva (DELETE /api/reservas.php?id=XX)
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+    $stmt = $pdo->prepare("DELETE FROM reservas WHERE id_reserva = :id");
+    $ok = $stmt->execute([':id' => $id]);
+    echo json_encode([
+        'success' => $ok,
+        'msg' => $ok ? 'Reserva eliminada correctamente' : 'No se pudo eliminar la reserva'
+    ]);
+    exit;
+}
+
 // Si se solicitan solo las reservas activas para el dashboard
 if ($estado === 'activas') {
     // Obtener total de reservas activas actuales

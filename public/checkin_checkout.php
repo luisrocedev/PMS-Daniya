@@ -10,10 +10,10 @@ if (!isset($_SESSION['usuario_id'])) {
 
 <head>
   <meta charset="UTF-8">
-  <title>Check-in/Check-out - Daniya Denia</title>
+  <title>Check-in/Check-out - PMS Daniya Denia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -24,147 +24,242 @@ if (!isset($_SESSION['usuario_id'])) {
     <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
     <div class="main-content p-4 w-100">
-      <h2 class="page-title mb-4">Check-in / Check-out</h2>
-
-      <div id="checkin-pages">
-        <div class="check-page active" data-page="1">
-          <!-- Estadísticas -->
-          <div class="checkin-stats animate-fade-in">
-            <div class="stat-card">
-              <div class="stat-label">Check-ins Pendientes</div>
-              <div class="stat-value" id="pending-checkins">0</div>
-              <div class="stat-trend">Hoy</div>
+      <!-- Header de la página -->
+      <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="page-title mb-0">Check-in / Check-out</h2>
+          <div class="page-actions">
+            <div class="form-check form-switch d-flex align-items-center me-3">
+              <input class="form-check-input me-2" type="checkbox" id="auto-refresh">
+              <label class="form-check-label" for="auto-refresh">Auto-actualizar</label>
             </div>
-            <div class="stat-card">
-              <div class="stat-label">Check-outs Pendientes</div>
-              <div class="stat-value" id="pending-checkouts">0</div>
-              <div class="stat-trend">Hoy</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Completados Hoy</div>
-              <div class="stat-value" id="completed-today">0</div>
-              <div class="stat-trend">Total</div>
-            </div>
+            <button class="btn btn-outline-primary" onclick="filtrarHoy()">
+              <i class="fas fa-calendar-day me-2"></i>Ver solo HOY
+            </button>
           </div>
         </div>
+      </div>
 
-        <div class="check-page" data-page="2">
-          <!-- Reservas pendientes de Check-in -->
-          <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h3 class="mb-0">Reservas pendientes de Check-in</h3>
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="auto-refresh">
-                <label class="form-check-label" for="auto-refresh">Auto-actualizar</label>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table check-table">
-                  <thead>
-                    <tr>
-                      <th>ID Reserva</th>
-                      <th>Cliente</th>
-                      <th>Habitación</th>
-                      <th>Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tabla-checkin"></tbody>
-                </table>
+      <!-- Contenido principal -->
+      <div class="content-wrapper">
+        <!-- Estadísticas -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-sign-in-alt fa-2x text-primary mb-3"></i>
+                <div class="stat-value" id="pending-checkins">0</div>
+                <div class="stat-label">Check-ins Pendientes</div>
+                <div class="stat-trend">
+                  <i class="fas fa-clock"></i> Hoy
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="check-page" data-page="3">
-          <!-- Reservas pendientes de Check-out -->
-          <div class="card">
-            <div class="card-header">
-              <h3 class="mb-0">Reservas pendientes de Check-out</h3>
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-sign-out-alt fa-2x text-warning mb-3"></i>
+                <div class="stat-value" id="pending-checkouts">0</div>
+                <div class="stat-label">Check-outs Pendientes</div>
+                <div class="stat-trend">
+                  <i class="fas fa-clock"></i> Hoy
+                </div>
+              </div>
             </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table check-table">
-                  <thead>
-                    <tr>
-                      <th>ID Reserva</th>
-                      <th>Cliente</th>
-                      <th>Habitación</th>
-                      <th>Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tabla-checkout"></tbody>
-                </table>
+          </div>
+
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
+                <div class="stat-value" id="completed-today">0</div>
+                <div class="stat-label">Completados</div>
+                <div class="stat-trend">
+                  <i class="fas fa-calendar-day"></i> Hoy
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body text-center">
+                <i class="fas fa-percentage fa-2x text-info mb-3"></i>
+                <div class="stat-value" id="occupancy-rate">0%</div>
+                <div class="stat-label">Ocupación</div>
+                <div class="stat-trend">
+                  <i class="fas fa-hotel"></i> Actual
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="check-page" data-page="4">
-          <!-- Cargos de la reserva -->
-          <div class="card">
-            <div class="card-header">
-              <h3 class="mb-0">Cargos de la reserva</h3>
+        <!-- Timeline de próximas llegadas -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="h5 mb-0">Próximas Llegadas</h3>
+          </div>
+          <div class="card-body">
+            <div class="timeline" id="upcoming-arrivals">
+              <!-- Se llena dinámicamente -->
             </div>
-            <div class="card-body">
-              <div id="lista-cargos" class="cargo-list mb-4"></div>
-              <div class="cargo-form">
-                <h4 class="mb-3">Añadir nuevo cargo</h4>
-                <form id="form-nuevo-cargo" class="row g-3">
-                  <div class="col-md-8">
-                    <input type="text" id="desc-cargo" class="form-control" placeholder="Descripción" required>
-                  </div>
-                  <div class="col-md-3">
+          </div>
+        </div>
+
+        <!-- Check-ins y Check-outs -->
+        <div class="row g-4">
+          <!-- Check-ins Pendientes -->
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">Check-ins Pendientes</h3>
+                <span class="badge bg-primary" id="checkin-count">0</span>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover check-table">
+                    <thead>
+                      <tr>
+                        <th>ID Reserva</th>
+                        <th>Cliente</th>
+                        <th>Habitación</th>
+                        <th>Hora Estimada</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tabla-checkin"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Check-outs Pendientes -->
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">Check-outs Pendientes</h3>
+                <span class="badge bg-warning" id="checkout-count">0</span>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover check-table">
+                    <thead>
+                      <tr>
+                        <th>ID Reserva</th>
+                        <th>Cliente</th>
+                        <th>Habitación</th>
+                        <th>Hora Límite</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tabla-checkout"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gestión de Cargos -->
+        <div class="card mt-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="h5 mb-0">Gestión de Cargos</h3>
+          </div>
+          <div class="card-body">
+            <div id="lista-cargos" class="mb-4">
+              <!-- Lista de cargos -->
+            </div>
+            <div class="cargo-form">
+              <form id="form-nuevo-cargo" class="row g-3">
+                <div class="col-md-6">
+                  <input type="text" id="desc-cargo" class="form-control" placeholder="Descripción del cargo" required>
+                </div>
+                <div class="col-md-4">
+                  <div class="input-group">
+                    <span class="input-group-text">€</span>
                     <input type="number" step="0.01" id="imp-cargo" class="form-control" placeholder="Importe" required>
                   </div>
-                  <div class="col-md-1">
-                    <button type="button" id="btn-add-cargo" class="btn btn-primary">
-                      <i class="fas fa-plus"></i>
-                    </button>
-                  </div>
-                </form>
-              </div>
+                </div>
+                <div class="col-md-2">
+                  <button type="button" id="btn-add-cargo" class="btn btn-primary w-100">
+                    <i class="fas fa-plus me-2"></i>Añadir
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-
-        <div class="page-nav text-center mt-4">
-          <button id="prevChk" class="btn btn-secondary me-2">Anterior</button>
-          <span class="page-indicator">Página <span id="currentChkPage">1</span> de <span id="totalChkPages">4</span></span>
-          <button id="nextChk" class="btn btn-secondary">Siguiente</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal de Check-in Mejorado -->
-  <div id="modalCheckin" class="modal" style="display:none;">
-    <div class="modal-checkin">
-      <h3>Check-in: Datos de Documento y Firma</h3>
-      <form id="formCheckinModal" class="animate-fade-in">
-        <input type="hidden" name="id_reserva" id="id_reserva_modal" value="">
-
-        <div class="mb-3">
-          <label for="dni_modal" class="form-label">Nº Documento:</label>
-          <input type="text" name="dni" id="dni_modal" class="form-control" required>
+  <!-- Modal de Check-in -->
+  <div class="modal fade" id="modalCheckin" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Realizar Check-in</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+        <div class="modal-body">
+          <form id="formCheckinModal" class="animate-fade-in">
+            <input type="hidden" name="id_reserva" id="id_reserva_modal">
 
-        <div class="mb-3">
-          <label for="firma_modal" class="form-label">Firma:</label>
-          <input type="text" name="firma" id="firma_modal" class="form-control" required>
-        </div>
+            <div class="mb-3">
+              <label class="form-label">
+                <i class="fas fa-id-card me-2"></i>Documento de Identidad
+              </label>
+              <input type="text" name="dni" id="dni_modal" class="form-control" required>
+            </div>
 
-        <div class="d-flex justify-content-end gap-2">
-          <button type="button" class="btn btn-secondary" onclick="cerrarModalCheckin()">Cancelar</button>
-          <button type="submit" class="btn btn-success">Realizar Check-in</button>
+            <div class="mb-3">
+              <label class="form-label">
+                <i class="fas fa-signature me-2"></i>Firma Digital
+              </label>
+              <input type="text" name="firma" id="firma_modal" class="form-control" required>
+            </div>
+
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="terminos" required>
+              <label class="form-check-label" for="terminos">
+                Acepto los términos y condiciones
+              </label>
+            </div>
+          </form>
         </div>
-      </form>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Cancelar
+          </button>
+          <button type="submit" form="formCheckinModal" class="btn btn-success">
+            <i class="fas fa-check me-2"></i>Completar Check-in
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/checkin_checkout.js"></script>
+  <script>
+    function filtrarHoy() {
+      // Suponiendo que ya tienes funciones de filtrado en checkin_checkout.js
+      // Aquí solo llamamos a la función de filtrado por fecha actual
+      if (typeof filtrarPorFechaHoy === 'function') {
+        filtrarPorFechaHoy();
+      } else {
+        // Si no existe, recarga la página con un parámetro de filtro
+        window.location.href = window.location.pathname + '?fecha=' + new Date().toISOString().split('T')[0];
+      }
+    }
+  </script>
 </body>
 
 </html>

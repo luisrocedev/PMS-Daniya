@@ -16,6 +16,7 @@ exit;
     <title>Gestión de Reservas - PMS Daniya Denia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
 </head>
 
 <body>
@@ -29,6 +30,42 @@ exit;
 
         <div class="main-content">
             <h2 class="page-title">Gestión de Reservas</h2>
+
+            <!-- ====== CALENDARIO DE RESERVAS (VISTA GLOBAL) ====== -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-3"><i class="fas fa-calendar-alt me-2"></i>Calendario de Reservas</h3>
+                    <!-- Filtros y calendario -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="filtroTipoHab" class="form-label">Filtrar por Tipo de Habitación:</label>
+                            <select id="filtroTipoHab" class="form-select" onchange="actualizarCalendario()">
+                                <option value="">Todas las habitaciones</option>
+                                <option value="Individual">Individual</option>
+                                <option value="Doble">Doble</option>
+                                <option value="Suite">Suite</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="filtroEstado" class="form-label">Estado de Reserva:</label>
+                            <select id="filtroEstado" class="form-select" onchange="actualizarCalendario()">
+                                <option value="">Todos los estados</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Confirmada">Confirmada</option>
+                                <option value="CheckIn">Check-in</option>
+                                <option value="CheckOut">Check-out</option>
+                                <option value="Cancelada">Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-outline-secondary w-100" onclick="limpiarFiltros()">
+                                <i class="fas fa-undo me-2"></i>Limpiar Filtros
+                            </button>
+                        </div>
+                    </div>
+                    <div id="calendar"></div>
+                </div>
+            </div>
 
             <!-- Filtros de búsqueda -->
             <div class="card">
@@ -139,6 +176,7 @@ exit;
     </div>
 
     <script src="js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script>
         /*********************************************************
          * 1. Variables globales para paginación
@@ -366,7 +404,63 @@ exit;
          *********************************************************/
         document.addEventListener('DOMContentLoaded', () => {
             listarReservasPaginado(1);
+            inicializarCalendario();
         });
+
+        /*********************************************************
+         * 7. Scripts para el calendario
+         *********************************************************/
+        let calendar;
+
+        function inicializarCalendario() {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: cargarEventos,
+                eventClick: function(info) {
+                    window.location.href = `cliente_detalle.php?id_reserva=${info.event.id}`;
+                },
+                eventContent: function(arg) {
+                    return {
+                        html: `
+                            <div class='fc-content'>
+                                <div class='fc-title'>${arg.event.title}</div>
+                                <div class='fc-description small'>${arg.event.extendedProps.descripcion || ''}</div>
+                            </div>
+                        `
+                    };
+                }
+            });
+            calendar.render();
+        }
+
+        function cargarEventos(fetchInfo, successCallback, failureCallback) {
+            const tipo = document.getElementById('filtroTipoHab').value;
+            const estado = document.getElementById('filtroEstado').value;
+            let url = `../api/reservas_calendar.php?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`;
+            if (tipo) url += `&tipo=${encodeURIComponent(tipo)}`;
+            if (estado) url += `&estado=${encodeURIComponent(estado)}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(events => successCallback(events))
+                .catch(error => failureCallback(error));
+        }
+
+        function actualizarCalendario() {
+            calendar.refetchEvents();
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('filtroTipoHab').value = '';
+            document.getElementById('filtroEstado').value = '';
+            actualizarCalendario();
+        }
     </script>
 
     <!-- Ejemplo de estilos para el modal (puedes ajustarlo a tu style.css) -->

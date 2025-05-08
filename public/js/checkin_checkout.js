@@ -4,363 +4,368 @@
 let refreshInterval;
 const REFRESH_INTERVAL = 30000; // 30 segundos
 
+// Inicialización cuando el documento está listo
 document.addEventListener('DOMContentLoaded', () => {
-  initializeApp();
+    initializeApp();
 });
 
+// Inicializar la aplicación
 function initializeApp() {
-  cargarCheckInOut();
-  setupAutoRefresh();
-  initializeEventListeners();
-  initializeCheckinPageNav(); // inicializar paginación interna
+    cargarCheckInOut();
+    setupAutoRefresh();
+    initializeEventListeners();
 }
 
 // Configurar auto-refresh
 function setupAutoRefresh() {
-  const autoRefreshToggle = document.getElementById('auto-refresh');
-  if (autoRefreshToggle) {
-    autoRefreshToggle.addEventListener('change', () => {
-      if (autoRefreshToggle.checked) {
-        refreshInterval = setInterval(cargarCheckInOut, REFRESH_INTERVAL);
-      } else {
-        clearInterval(refreshInterval);
-      }
-    });
-  }
+    const autoRefreshToggle = document.getElementById('auto-refresh');
+    if (autoRefreshToggle) {
+        autoRefreshToggle.addEventListener('change', () => {
+            if (autoRefreshToggle.checked) {
+                refreshInterval = setInterval(cargarCheckInOut, REFRESH_INTERVAL);
+                mostrarMensaje('Auto-actualización activada', 'info');
+            } else {
+                clearInterval(refreshInterval);
+                mostrarMensaje('Auto-actualización desactivada', 'info');
+            }
+        });
+    }
 }
 
 // Inicializar event listeners
 function initializeEventListeners() {
-  const formCheckinModal = document.getElementById('formCheckinModal');
-  if (formCheckinModal) {
-    formCheckinModal.addEventListener('submit', handleCheckinSubmit);
-  }
+    const formCheckinModal = document.getElementById('formCheckinModal');
+    if (formCheckinModal) {
+        formCheckinModal.addEventListener('submit', handleCheckinSubmit);
+    }
 
-  const btnAddCargo = document.getElementById('btn-add-cargo');
-  if (btnAddCargo) {
-    btnAddCargo.addEventListener('click', handleNewCargo);
-  }
+    const btnAddCargo = document.getElementById('btn-add-cargo');
+    if (btnAddCargo) {
+        btnAddCargo.addEventListener('click', handleNewCargo);
+    }
+}
 
-  const tabCargos = document.querySelector('a#tab-cargos');
-  if (tabCargos) {
-    tabCargos.addEventListener('shown.bs.tab', () => {
-      if (window.reservaId) {
-        cargarCargos(window.reservaId);
-      }
-    });
-  }
+// Modificación para permitir filtro dinámico "HOY" sin recargar la página
+function filtrarPorFechaHoy() {
+    if (typeof cargarCheckInOut === 'function') {
+        const hoy = new Date().toISOString().split('T')[0];
+        cargarCheckInOut(hoy);
+    }
 }
 
 // Cargar datos de check-in/check-out
-async function cargarCheckInOut() {
-  try {
-    const response = await fetch('../api/checkinout.php');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new TypeError("La respuesta del servidor no es JSON válido");
-    }
-    
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(data.error);
-    }
-    
-    updateStats(data);
-    renderCheckInTable(data.pendientesCheckIn || []);
-    renderCheckOutTable(data.pendientesCheckOut || []);
-    
-    // Añadir animación a las nuevas filas
-    document.querySelectorAll('tbody tr').forEach(row => {
-      row.classList.add('animate-fade-in');
-    });
-  } catch (error) {
-    console.error('Error al cargar datos:', error);
-    mostrarError('Error al cargar los datos. ' + (error.message || 'Por favor, verifica tu conexión e inténtalo de nuevo.'));
-  }
-}
+async function cargarCheckInOut(fecha = null) {
+    try {
+        let url = '../api/checkinout.php';
+        if (fecha) {
+            url += '?fecha=' + encodeURIComponent(fecha);
+        }
+        const response = await fetch(url);
+        const data = await response.json();
 
-// Función para mostrar mensajes de error
-function mostrarError(mensaje) {
-  const errorDiv = document.getElementById('error-message') || createErrorDiv();
-  errorDiv.textContent = mensaje;
-  errorDiv.style.display = 'block';
-  
-  // Ocultar después de 5 segundos
-  setTimeout(() => {
-    errorDiv.style.display = 'none';
-  }, 5000);
-}
-
-// Crear div para mensajes de error si no existe
-function createErrorDiv() {
-  const div = document.createElement('div');
-  div.id = 'error-message';
-  div.className = 'alert alert-danger';
-  div.style.position = 'fixed';
-  div.style.top = '20px';
-  div.style.right = '20px';
-  div.style.zIndex = '1000';
-  document.body.appendChild(div);
-  return div;
+        if (data.success) {
+            updateStats(data.stats);
+            renderCheckInTable(Array.isArray(data.pendientesCheckIn) ? data.pendientesCheckIn : []);
+            renderCheckOutTable(Array.isArray(data.pendientesCheckOut) ? data.pendientesCheckOut : []);
+            renderUpcomingArrivals(data.proximasLlegadas ? data.proximasLlegadas : []);
+            updateCounters(
+                Array.isArray(data.pendientesCheckIn) ? data.pendientesCheckIn.length : 0,
+                Array.isArray(data.pendientesCheckOut) ? data.pendientesCheckOut.length : 0
+            );
+            animateValues();
+        } else {
+            throw new Error(data.error || 'Error al cargar datos');
+        }
+    } catch (error) {
+        console.error('Error al cargar datos:', error);
+        mostrarError('Error al cargar los datos: ' + error.message);
+    }
 }
 
 // Actualizar estadísticas
-function updateStats(data) {
-  const stats = {
-    'pending-checkins': data.pendientesCheckIn?.length || 0,
-    'pending-checkouts': data.pendientesCheckOut?.length || 0,
-    'completed-today': (data.completadosHoy?.checkins || 0) + (data.completadosHoy?.checkouts || 0)
-  };
-
-  Object.entries(stats).forEach(([id, value]) => {
-    const element = document.getElementById(id);
-    if (element) {
-      animateValue(element, parseInt(element.textContent) || 0, value, 500);
-    }
-  });
+function updateStats(stats) {
+    document.getElementById('pending-checkins').textContent = stats.pendingCheckins;
+    document.getElementById('pending-checkouts').textContent = stats.pendingCheckouts;
+    document.getElementById('completed-today').textContent = stats.completedToday;
+    document.getElementById('occupancy-rate').textContent = stats.occupancyRate + '%';
 }
 
-// Función para animar valores numéricos
-function animateValue(element, start, end, duration) {
-  if (start === end) return;
-  const range = end - start;
-  const increment = end > start ? 1 : -1;
-  const stepTime = Math.abs(Math.floor(duration / range));
-  let current = start;
-  
-  const timer = setInterval(() => {
-    current += increment;
-    element.textContent = current;
-    if (current === end) {
-      clearInterval(timer);
-    }
-  }, stepTime);
+// Actualizar contadores en badges
+function updateCounters(checkinCount, checkoutCount) {
+    document.getElementById('checkin-count').textContent = checkinCount;
+    document.getElementById('checkout-count').textContent = checkoutCount;
 }
 
 // Renderizar tabla de check-ins
 function renderCheckInTable(checkins) {
-  const tbody = document.getElementById('tabla-checkin');
-  if (!tbody) return;
-  
-  tbody.innerHTML = checkins.length ? checkins.map(r => `
-    <tr>
-      <td>${r.id_reserva}</td>
-      <td>${r.nombre_cliente} ${r.apellidos_cliente}</td>
-      <td>${r.id_habitacion}</td>
-      <td>
-        <button class="btn check-action-btn btn-checkin" onclick="abrirModalCheckin(${r.id_reserva})">
-          <i class="fas fa-sign-in-alt me-2"></i>Check-in
-        </button>
-      </td>
-    </tr>
-  `).join('') : '<tr><td colspan="4" class="text-center">No hay check-ins pendientes</td></tr>';
+    const tbody = document.getElementById('tabla-checkin');
+    if (!tbody) return;
+
+    tbody.innerHTML = checkins.length ? checkins.map(r => `
+        <tr class="animate-fade-in">
+            <td>${r.id_reserva}</td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <div>
+                        <div class="fw-bold">${r.nombre_cliente} ${r.apellidos_cliente}</div>
+                        <small class="text-muted">${r.email || ''}</small>
+                    </div>
+                </div>
+            </td>
+            <td>${r.id_habitacion}</td>
+            <td>${formatTime(r.hora_estimada)}</td>
+            <td>
+                <span class="badge ${getStatusClass(r.estado)}">${r.estado}</span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="abrirModalCheckin(${r.id_reserva})">
+                    <i class="fas fa-sign-in-alt me-1"></i>Check-in
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="6" class="text-center">No hay check-ins pendientes</td></tr>';
 }
 
 // Renderizar tabla de check-outs
 function renderCheckOutTable(checkouts) {
-  const tbody = document.getElementById('tabla-checkout');
-  if (!tbody) return;
-  
-  tbody.innerHTML = checkouts.length ? checkouts.map(r => `
-    <tr>
-      <td>${r.id_reserva}</td>
-      <td>${r.nombre_cliente} ${r.apellidos_cliente}</td>
-      <td>${r.id_habitacion}</td>
-      <td>
-        <button class="btn check-action-btn btn-checkout" onclick="hacerCheckOut(${r.id_reserva})">
-          <i class="fas fa-sign-out-alt me-2"></i>Check-out
-        </button>
-      </td>
-    </tr>
-  `).join('') : '<tr><td colspan="4" class="text-center">No hay check-outs pendientes</td></tr>';
+    const tbody = document.getElementById('tabla-checkout');
+    if (!tbody) return;
+
+    tbody.innerHTML = checkouts.length ? checkouts.map(r => `
+        <tr class="animate-fade-in">
+            <td>${r.id_reserva}</td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <div>
+                        <div class="fw-bold">${r.nombre_cliente} ${r.apellidos_cliente}</div>
+                        <small class="text-muted">${r.email || ''}</small>
+                    </div>
+                </div>
+            </td>
+            <td>${r.id_habitacion}</td>
+            <td>${formatTime(r.hora_limite)}</td>
+            <td>
+                <span class="badge ${getStatusClass(r.estado)}">${r.estado}</span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-warning" onclick="hacerCheckOut(${r.id_reserva})">
+                    <i class="fas fa-sign-out-alt me-1"></i>Check-out
+                </button>
+            </td>
+        </tr>
+    `).join('') : '<tr><td colspan="6" class="text-center">No hay check-outs pendientes</td></tr>';
+}
+
+// Renderizar próximas llegadas
+function renderUpcomingArrivals(arrivals) {
+    const container = document.getElementById('upcoming-arrivals');
+    if (!container) return;
+
+    container.innerHTML = arrivals.length ? arrivals.map(a => `
+        <div class="timeline-item animate-fade-in">
+            <div class="timeline-point"></div>
+            <div class="timeline-content">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-1">${a.nombre_cliente} ${a.apellidos_cliente}</h4>
+                    <span class="badge bg-info">${formatTime(a.hora_estimada)}</span>
+                </div>
+                <p class="mb-0">Habitación ${a.id_habitacion}</p>
+            </div>
+        </div>
+    `).join('') : '<div class="text-center text-muted">No hay llegadas programadas</div>';
+}
+
+// Funciones de utilidad
+function formatTime(time) {
+    return new Date(time).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function getStatusClass(status) {
+    return {
+        'Pendiente': 'bg-warning',
+        'Confirmado': 'bg-primary',
+        'Completado': 'bg-success',
+        'Retrasado': 'bg-danger'
+    }[status] || 'bg-secondary';
 }
 
 // Modal de Check-in
-function abrirModalCheckin(id) {
-  const modal = document.getElementById('modalCheckin');
-  if (modal) {
+async function abrirModalCheckin(id) {
+    const modal = new bootstrap.Modal(document.getElementById('modalCheckin'));
     document.getElementById('id_reserva_modal').value = id;
-    modal.style.display = 'block';
-  }
-}
-
-function cerrarModalCheckin() {
-  const modal = document.getElementById('modalCheckin');
-  if (modal) {
-    modal.style.display = 'none';
-    const form = document.getElementById('formCheckinModal');
-    if (form) form.reset();
-  }
+    document.getElementById('dni_modal').value = '';
+    document.getElementById('firma_modal').value = '';
+    document.getElementById('terminos').checked = false;
+    modal.show();
 }
 
 // Manejar envío del formulario de check-in
 async function handleCheckinSubmit(e) {
-  e.preventDefault();
-  const form = new FormData(e.target);
-  
-  try {
-    const uploadResponse = await fetch('../api/checkin_uploads.php', {
-      method: 'POST',
-      body: form
-    });
-    
-    if (!uploadResponse.ok) {
-      throw new Error(`HTTP error! status: ${uploadResponse.status}`);
+    e.preventDefault();
+    const form = new FormData(e.target);
+
+    try {
+        // Subir documentos
+        const uploadResponse = await fetch('../api/checkin_uploads.php', {
+            method: 'POST',
+            body: form
+        });
+        
+        const uploadData = await uploadResponse.json();
+        
+        if (uploadData.success) {
+            // Realizar check-in
+            await hacerCheckIn(form.get('id_reserva'));
+            bootstrap.Modal.getInstance(document.getElementById('modalCheckin')).hide();
+        } else {
+            throw new Error(uploadData.error || 'Error al procesar los documentos');
+        }
+    } catch (error) {
+        console.error('Error en el proceso de check-in:', error);
+        mostrarError(error.message);
     }
-    
-    const uploadData = await uploadResponse.json();
-    
-    if (uploadData.error) {
-      throw new Error(uploadData.error);
-    }
-    
-    if (uploadData.success) {
-      await hacerCheckIn(form.get('id_reserva'));
-    } else {
-      throw new Error(uploadData.error || 'Error al procesar los documentos');
-    }
-  } catch (error) {
-    console.error('Error en el proceso de check-in:', error);
-    mostrarError(`Error al procesar el check-in: ${error.message}`);
-  }
 }
 
 // Realizar check-in
 async function hacerCheckIn(id) {
-  try {
-    const response = await fetch('../api/checkinout.php', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: `action=checkin&id_reserva=${id}`
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      cerrarModalCheckin();
-      await cargarCheckInOut();
-      window.location.href = `cliente_detalle.php?id_reserva=${id}`;
-    } else {
-      alert(data.error);
+    try {
+        const response = await fetch('../api/checkinout.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `action=checkin&id_reserva=${id}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarMensaje('Check-in realizado correctamente', 'success');
+            cargarCheckInOut();
+            setTimeout(() => {
+                window.location.href = `cliente_detalle.php?id_reserva=${id}`;
+            }, 1500);
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error('Error al realizar check-in:', error);
+        mostrarError(error.message);
     }
-  } catch (error) {
-    console.error('Error al realizar check-in:', error);
-  }
 }
 
 // Realizar check-out
 async function hacerCheckOut(id) {
-  if (!confirm('¿Está seguro de realizar el check-out? Se generará la factura final.')) return;
-  
-  try {
-    const response = await fetch('../api/checkinout.php', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: `action=checkout&id_reserva=${id}`
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      alert(data.msg);
-      cargarCheckInOut();
-    } else {
-      alert(data.error);
+    if (!confirm('¿Está seguro de realizar el check-out? Se generará la factura final.')) return;
+
+    try {
+        const response = await fetch('../api/checkinout.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `action=checkout&id_reserva=${id}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarMensaje('Check-out realizado correctamente', 'success');
+            cargarCheckInOut();
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error('Error al realizar check-out:', error);
+        mostrarError(error.message);
     }
-  } catch (error) {
-    console.error('Error al realizar check-out:', error);
-  }
 }
 
 // Gestión de cargos
-async function cargarCargos(id) {
-  if (!id) return;
-  
-  try {
-    const response = await fetch(`../api/cargos.php?reserva=${id}`);
-    const data = await response.json();
-    
-    const container = document.getElementById('lista-cargos');
-    container.innerHTML = data.length ? data.map(cargo => `
-      <div class="cargo-item animate-fade-in">
-        <div>
-          <strong>${cargo.descripcion}</strong>
-          <small class="text-muted">(${new Date(cargo.fecha).toLocaleDateString()})</small>
-        </div>
-        <div class="text-end">
-          <span class="badge bg-primary">${cargo.importe.toFixed(2)} €</span>
-        </div>
-      </div>
-    `).join('') : '<p class="text-center text-muted">No hay cargos registrados</p>';
-  } catch (error) {
-    console.error('Error al cargar cargos:', error);
-  }
-}
-
-// Manejar nuevo cargo
 async function handleNewCargo() {
-  const descripcion = document.getElementById('desc-cargo').value;
-  const importe = document.getElementById('imp-cargo').value;
-  const id_reserva = window.reservaId;
+    const descripcion = document.getElementById('desc-cargo').value;
+    const importe = document.getElementById('imp-cargo').value;
+    const id_reserva = document.getElementById('id_reserva_modal').value;
 
-  if (!id_reserva) {
-    alert('Debe seleccionar una reserva primero');
-    return;
-  }
-
-  try {
-    const response = await fetch('../api/cargos.php', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: `id_reserva=${id_reserva}&descripcion=${encodeURIComponent(descripcion)}&importe=${importe}`
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      document.getElementById('form-nuevo-cargo').reset();
-      cargarCargos(id_reserva);
-    } else {
-      alert('Error al añadir el cargo');
+    if (!descripcion || !importe || !id_reserva) {
+        mostrarError('Todos los campos son requeridos');
+        return;
     }
-  } catch (error) {
-    console.error('Error al añadir cargo:', error);
-  }
+
+    try {
+        const response = await fetch('../api/cargos.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id_reserva,
+                descripcion,
+                importe: parseFloat(importe)
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('form-nuevo-cargo').reset();
+            cargarCargos(id_reserva);
+            mostrarMensaje('Cargo añadido correctamente', 'success');
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error('Error al añadir cargo:', error);
+        mostrarError(error.message);
+    }
 }
 
-// Función de paginación interna para checkincheckout
-function initializeCheckinPageNav() {
-  const pages = document.querySelectorAll('#checkin-pages .check-page');
-  const prevBtn = document.getElementById('prevChk');
-  const nextBtn = document.getElementById('nextChk');
-  const currentPageEl = document.getElementById('currentChkPage');
-  const totalPagesEl = document.getElementById('totalChkPages');
-  let current = 0;
+// Mostrar mensajes al usuario
+function mostrarError(mensaje) {
+    mostrarMensaje(mensaje, 'danger');
+}
 
-  // Establecer el total de páginas
-  if (totalPagesEl) totalPagesEl.textContent = pages.length;
+function mostrarMensaje(mensaje, tipo = 'info') {
+    const container = document.createElement('div');
+    container.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    container.style.zIndex = '1050';
+    container.innerHTML = `
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(container);
+    
+    setTimeout(() => {
+        container.remove();
+    }, 3000);
+}
 
-  function updateButtons() {
-    prevBtn.disabled = current === 0;
-    nextBtn.disabled = current === pages.length - 1;
-    if (currentPageEl) currentPageEl.textContent = current + 1;
-  }
+// Animación de valores
+function animateValues() {
+    document.querySelectorAll('.stat-value').forEach(el => {
+        const value = parseInt(el.textContent);
+        if (!isNaN(value)) {
+            animateValue(el, 0, value, 1000);
+        }
+    });
+}
 
-  function showPage(index) {
-    pages[current].classList.remove('active');
-    current = index;
-    pages[current].classList.add('active');
-    updateButtons();
-  }
-
-  prevBtn.addEventListener('click', () => { if (current > 0) showPage(current - 1); });
-  nextBtn.addEventListener('click', () => { if (current < pages.length - 1) showPage(current + 1); });
-
-  updateButtons();
+function animateValue(element, start, end, duration) {
+    const range = end - start;
+    const increment = range / (duration / 16);
+    let current = start;
+    
+    const update = () => {
+        current += increment;
+        element.textContent = Math.round(current);
+        
+        if ((increment > 0 && current < end) || (increment < 0 && current > end)) {
+            requestAnimationFrame(update);
+        } else {
+            element.textContent = end;
+        }
+    };
+    
+    requestAnimationFrame(update);
 }

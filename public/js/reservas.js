@@ -1,12 +1,14 @@
 // reservas.js
 // Inicialización cuando el DOM está listo
 document.addEventListener('DOMContentLoaded', () => {
-    listarReservasPaginado(1);
+    listarReservas();
     renderCalendar();
-    initializeReservasPageNav(); // Inicializar la paginación interna
+    actualizarEstadisticas(); // Nueva función para actualizar los contadores
+    
     // Auto-actualización cada 30 segundos
     setInterval(() => {
-        listarReservasPaginado(1);
+        listarReservas();
+        actualizarEstadisticas();
         if (calendar) {
             calendar.refetchEvents();
         }
@@ -15,16 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Variables globales
 let calendar;
-const limitReservas = 10;
 
-// Función para listar reservas con paginación y filtros
-function listarReservasPaginado(page = 1) {
+// Función para listar todas las reservas sin paginación
+function listarReservas() {
     const searchVal = document.getElementById('searchRes')?.value || '';
     const estadoVal = document.getElementById('estadoRes')?.value || '';
     const fechaInicio = document.getElementById('fechaInicioFiltro')?.value || '';
     const fechaFin = document.getElementById('fechaFinFiltro')?.value || '';
 
-    let url = `../api/reservas.php?page=${page}&limit=${limitReservas}`;
+    let url = `../api/reservas.php?`;
     if (searchVal) url += `&search=${encodeURIComponent(searchVal)}`;
     if (estadoVal) url += `&estado=${encodeURIComponent(estadoVal)}`;
     if (fechaInicio) url += `&fecha_inicio=${encodeURIComponent(fechaInicio)}`;
@@ -33,11 +34,9 @@ function listarReservasPaginado(page = 1) {
     fetch(url)
         .then(r => r.json())
         .then(obj => {
-            const data = obj.data || [];
-            const total = obj.total || 0;
-            const pageNum = obj.page || 1;
+            // Si es un array, usamos directamente, si es un objeto con data, extraemos data
+            const data = Array.isArray(obj) ? obj : (obj.data || []);
             renderTablaReservas(data);
-            renderPaginacion(pageNum, limitReservas, total);
         })
         .catch(e => {
             console.error('Error al listar reservas:', e);
@@ -75,45 +74,6 @@ function renderTablaReservas(reservas) {
     });
 }
 
-// Renderizar paginación
-function renderPaginacion(page, limit, total) {
-    const divPag = document.getElementById('paginacionReservas');
-    if (!divPag) return;
-
-    const totalPages = Math.ceil(total / limit);
-    let html = '<nav aria-label="Navegación de reservas"><ul class="pagination justify-content-center">';
-    
-    // Botón anterior
-    html += `
-        <li class="page-item ${page <= 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="event.preventDefault(); listarReservasPaginado(${page - 1})" tabindex="-1">
-                <i class="fas fa-chevron-left"></i>
-            </a>
-        </li>
-    `;
-
-    // Páginas
-    for (let i = 1; i <= totalPages; i++) {
-        html += `
-            <li class="page-item ${page === i ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="event.preventDefault(); listarReservasPaginado(${i})">${i}</a>
-            </li>
-        `;
-    }
-
-    // Botón siguiente
-    html += `
-        <li class="page-item ${page >= totalPages ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="event.preventDefault(); listarReservasPaginado(${page + 1})">
-                <i class="fas fa-chevron-right"></i>
-            </a>
-        </li>
-    `;
-
-    html += '</ul></nav>';
-    divPag.innerHTML = html;
-}
-
 // Crear nueva reserva
 function crearReserva(esDesdeCalendario = false) {
     const formId = esDesdeCalendario ? 'formNuevaReservaCalendario' : 'formCrearReserva';
@@ -128,6 +88,14 @@ function crearReserva(esDesdeCalendario = false) {
         estado_reserva: esDesdeCalendario ? 'Pendiente' : document.getElementById('estado_nueva').value
     };
 
+    // Añadir campos adicionales si existen
+    if (!esDesdeCalendario) {
+        const numPersonas = document.getElementById('num_personas');
+        const observaciones = document.getElementById('observaciones');
+        if (numPersonas) formData.num_personas = numPersonas.value;
+        if (observaciones) formData.observaciones = observaciones.value;
+    }
+
     fetch('../api/reservas.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -138,10 +106,10 @@ function crearReserva(esDesdeCalendario = false) {
         if (data.success) {
             mostrarAlerta('Reserva creada con éxito', 'success');
             form.reset();
-            if (esDesdeCalendario) {
-                cerrarModalNuevaReservaCalendario();
-            }
-            listarReservasPaginado(1);
+            const modal = bootstrap.Modal.getInstance(document.querySelector(esDesdeCalendario ? '#modalNuevaReservaCalendario' : '#modalNuevaReserva'));
+            if (modal) modal.hide();
+            listarReservas();
+            actualizarEstadisticas();
             if (calendar) calendar.refetchEvents();
         } else {
             mostrarAlerta(data.error || 'Error al crear la reserva', 'danger');
@@ -149,40 +117,6 @@ function crearReserva(esDesdeCalendario = false) {
     })
     .catch(e => {
         console.error('Error al crear reserva:', e);
-        mostrarAlerta('Error al crear la reserva', 'danger');
-    });
-}
-
-// Función para crear una nueva reserva (versión integrada en página)
-function crearReservaIntegrada() {
-    const formData = {
-        id_cliente: document.getElementById('id_cliente_integrado').value,
-        id_habitacion: document.getElementById('id_habitacion_integrado').value,
-        fecha_entrada: document.getElementById('fecha_entrada_integrado').value,
-        fecha_salida: document.getElementById('fecha_salida_integrado').value,
-        estado_reserva: document.getElementById('estado_integrado').value
-    };
-
-    fetch('../api/reservas.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(formData)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            mostrarAlerta('Reserva creada con éxito', 'success');
-            document.getElementById('formNuevaReservaIntegrado').reset();
-            listarReservasPaginado(1);
-            if (calendar) calendar.refetchEvents();
-            // Ir a la página de listado después de crear
-            showReservasPage(1); // Volver a la primera página (filtros)
-        } else {
-            mostrarAlerta(data.error || 'Error al crear la reserva', 'danger');
-        }
-    })
-    .catch(e => {
-        console.error('Error al crear reserva integrada:', e);
         mostrarAlerta('Error al crear la reserva', 'danger');
     });
 }
@@ -198,6 +132,12 @@ function editarReserva() {
         estado_reserva: document.getElementById('estado_editar').value
     };
 
+    // Añadir campos adicionales si existen
+    const numPersonas = document.getElementById('num_personas_editar');
+    const observaciones = document.getElementById('observaciones_editar');
+    if (numPersonas) formData.num_personas = numPersonas.value;
+    if (observaciones) formData.observaciones = observaciones.value;
+
     fetch(`../api/reservas.php?id=${id_reserva}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -207,8 +147,10 @@ function editarReserva() {
     .then(data => {
         if (data.success) {
             mostrarAlerta('Reserva actualizada con éxito', 'success');
-            cerrarModalEditar();
-            listarReservasPaginado(1);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarReserva'));
+            if (modal) modal.hide();
+            listarReservas();
+            actualizarEstadisticas();
             if (calendar) calendar.refetchEvents();
         } else {
             mostrarAlerta(data.error || 'Error al actualizar la reserva', 'danger');
@@ -228,7 +170,8 @@ function confirmarEliminar(idReserva) {
             .then(data => {
                 if (data.success) {
                     mostrarAlerta('Reserva eliminada con éxito', 'success');
-                    listarReservasPaginado(1);
+                    listarReservas();
+                    actualizarEstadisticas();
                     if (calendar) calendar.refetchEvents();
                 } else {
                     mostrarAlerta(data.error || 'Error al eliminar la reserva', 'danger');
@@ -239,6 +182,29 @@ function confirmarEliminar(idReserva) {
                 mostrarAlerta('Error al eliminar la reserva', 'danger');
             });
     }
+}
+
+// Actualizar las estadísticas
+function actualizarEstadisticas() {
+    // Podemos hacer una llamada a la API para obtener las estadísticas
+    // o bien calcularlas a partir de las reservas existentes
+    fetch('../api/reservas.php?estadisticas=true')
+        .then(r => r.json())
+        .then(stats => {
+            // Actualizamos los contadores (si existe la API que devuelve estadísticas)
+            document.getElementById('reservasActivas').textContent = stats.activas || 0;
+            document.getElementById('checkinHoy').textContent = stats.checkins_hoy || 0;
+            document.getElementById('checkoutHoy').textContent = stats.checkouts_hoy || 0;
+            document.getElementById('ocupacionHoy').textContent = (stats.ocupacion_actual || 0) + '%';
+        })
+        .catch(e => {
+            console.error('Error al cargar estadísticas:', e);
+            // Si falla, ponemos valores por defecto
+            document.getElementById('reservasActivas').textContent = '0';
+            document.getElementById('checkinHoy').textContent = '0';
+            document.getElementById('checkoutHoy').textContent = '0';
+            document.getElementById('ocupacionHoy').textContent = '0%';
+        });
 }
 
 // Funciones del calendario
@@ -280,6 +246,12 @@ function renderCalendar(filterTipo = '') {
     calendar.render();
 }
 
+// Función para actualizar el calendario según el filtro seleccionado
+function actualizarCalendario() {
+    const filterTipo = document.getElementById('filtroTipoHab').value || '';
+    renderCalendar(filterTipo);
+}
+
 // Función para buscar habitaciones disponibles
 function buscarDisponibles() {
     const fechaEntrada = document.getElementById('fecha_entrada_cal').value;
@@ -315,78 +287,6 @@ function buscarDisponibles() {
         });
 }
 
-// Función para manejar la paginación interna
-function initializeReservasPageNav() {
-    const pages = document.querySelectorAll('#reservas-pages .content-page');
-    if (!pages.length) return; // Si no hay páginas, no hace nada
-    
-    const prevBtn = document.getElementById('prevRes');
-    const nextBtn = document.getElementById('nextRes');
-    const currentPageEl = document.getElementById('currentResPage');
-    const totalPagesEl = document.getElementById('totalResPages');
-    let current = 0;
-
-    // Establecer el total de páginas
-    if (totalPagesEl) {
-        totalPagesEl.textContent = pages.length;
-    }
-
-    function updateButtons() {
-        if (prevBtn) prevBtn.disabled = current === 0;
-        if (nextBtn) nextBtn.disabled = current === pages.length - 1;
-        if (currentPageEl) currentPageEl.textContent = current + 1;
-    }
-
-    // Función para mostrar una página específica
-    window.showReservasPage = function(index) {
-        // index debe ser 0-indexed internamente pero 1-indexed para el usuario
-        index = parseInt(index);
-        const adjustedIndex = index - 1; 
-        
-        if (adjustedIndex >= 0 && adjustedIndex < pages.length) {
-            pages[current].classList.remove('active');
-            current = adjustedIndex;
-            pages[current].classList.add('active');
-            updateButtons();
-        }
-    };
-
-    // Configurar los botones de navegación
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => { 
-            if (current > 0) {
-                pages[current].classList.remove('active');
-                current--;
-                pages[current].classList.add('active');
-                updateButtons();
-            }
-        });
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => { 
-            if (current < pages.length - 1) {
-                pages[current].classList.remove('active');
-                current++;
-                pages[current].classList.add('active');
-                updateButtons();
-            }
-        });
-    }
-
-    // Añadir navegación cuando filtra para ir a la página de resultados
-    const formFiltro = document.querySelector('form[onsubmit*="listarReservasPaginado"]');
-    if (formFiltro) {
-        formFiltro.addEventListener('submit', () => {
-            // Ir a la página 2 (listado) después de filtrar
-            setTimeout(() => showReservasPage(2), 100);
-        });
-    }
-
-    // Configuración inicial de botones
-    updateButtons();
-}
-
 // Funciones auxiliares
 function getEstadoColor(estado) {
     const colores = {
@@ -411,6 +311,7 @@ function mostrarAlerta(mensaje, tipo) {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
     alertDiv.setAttribute('role', 'alert');
+    alertDiv.style.zIndex = '9999';
     alertDiv.innerHTML = `
         ${mensaje}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -438,6 +339,14 @@ function abrirModalEditar(idReserva) {
             document.getElementById('fecha_salida_editar').value = res.fecha_salida;
             document.getElementById('estado_editar').value = res.estado_reserva;
             
+            if (document.getElementById('num_personas_editar')) {
+                document.getElementById('num_personas_editar').value = res.num_personas || 1;
+            }
+            
+            if (document.getElementById('observaciones_editar')) {
+                document.getElementById('observaciones_editar').value = res.observaciones || '';
+            }
+            
             const modal = new bootstrap.Modal(document.getElementById('modalEditarReserva'));
             modal.show();
         })
@@ -445,6 +354,14 @@ function abrirModalEditar(idReserva) {
             console.error('Error al abrir modal de edición:', e);
             mostrarAlerta('Error al cargar los datos de la reserva', 'danger');
         });
+}
+
+function abrirModalNuevaReservaCalendario(fecha) {
+    const fechaEntradaEl = document.getElementById('fecha_entrada_cal');
+    if (fechaEntradaEl) fechaEntradaEl.value = fecha;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalNuevaReservaCalendario'));
+    modal.show();
 }
 
 function actualizarFechasReserva(info) {
@@ -464,7 +381,8 @@ function actualizarFechasReserva(info) {
     .then(data => {
         if (data.success) {
             mostrarAlerta('Fechas actualizadas correctamente', 'success');
-            listarReservasPaginado(1);
+            listarReservas();
+            actualizarEstadisticas();
         } else {
             mostrarAlerta(data.error || 'Error al actualizar las fechas', 'danger');
             info.revert();

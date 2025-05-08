@@ -23,129 +23,136 @@ if (!isset($_SESSION['usuario_id'])) {
 <body>
     <?php include __DIR__ . '/../partials/navbar.php'; ?>
 
-    <div class="d-flex">
+    <div class="d-flex" style="margin-top:1rem;">
         <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
-        <div class="main-content container-fluid">
-            <div class="row mb-4">
-                <div class="col">
-                    <h2 class="page-title">Gestión de Tarifas</h2>
-                </div>
-                <div class="col text-end">
+        <div class="main-content">
+            <!-- Header de la página -->
+            <div class="page-header">
+                <h2 class="page-title">Gestión de Tarifas</h2>
+                <div class="page-actions">
                     <button class="btn btn-primary" onclick="prepararNuevaTarifa()" data-bs-toggle="modal" data-bs-target="#modalTarifa">
                         <i class="fas fa-plus me-2"></i>Nueva Tarifa
                     </button>
                 </div>
             </div>
 
-            <!-- Resumen de Tarifas -->
-            <div class="row g-4 mb-4">
-                <!-- Total Tarifas -->
-                <div class="col-md-3">
+            <!-- Contenido principal con scroll -->
+            <div class="content-wrapper">
+                <!-- Resumen de Tarifas -->
+                <div class="grid-container">
+                    <!-- Total Tarifas -->
                     <div class="card stat-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-tags stat-icon text-primary"></i>
+                        <div class="card-body">
+                            <i class="fas fa-tags fa-2x text-primary mb-3"></i>
                             <div id="totalTarifas" class="stat-value">0</div>
                             <div class="stat-label">Total Tarifas</div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Tarifa Media -->
-                <div class="col-md-3">
+                    <!-- Tarifa Media -->
                     <div class="card stat-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-euro-sign stat-icon text-success"></i>
+                        <div class="card-body">
+                            <i class="fas fa-euro-sign fa-2x text-success mb-3"></i>
                             <div id="tarifaPromedio" class="stat-value">0€</div>
                             <div class="stat-label">Tarifa Media</div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Tarifas Activas -->
-                <div class="col-md-3">
+                    <!-- Tarifas Activas -->
                     <div class="card stat-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-clock stat-icon text-info"></i>
+                        <div class="card-body">
+                            <i class="fas fa-clock fa-2x text-info mb-3"></i>
                             <div id="tarifasActivas" class="stat-value">0</div>
                             <div class="stat-label">Tarifas Activas</div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Próximas a Vencer -->
-                <div class="col-md-3">
+                    <!-- Próximas a Vencer -->
                     <div class="card stat-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-exclamation-triangle stat-icon text-warning"></i>
+                        <div class="card-body">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
                             <div id="tarifasVencer" class="stat-value">0</div>
                             <div class="stat-label">Próximas a Vencer</div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Filtros de búsqueda -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title mb-4">Buscar Tarifas</h3>
-                    <form onsubmit="event.preventDefault(); listarTarifasPaginado(1);" class="row g-3">
-                        <div class="col-md-3">
-                            <label for="filtroTipoHab" class="form-label">Tipo Habitación:</label>
-                            <select id="filtroTipoHab" class="form-select">
-                                <option value="">Todos los tipos</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="filtroTemporada" class="form-label">Temporada:</label>
-                            <select id="filtroTemporada" class="form-select">
-                                <option value="">Todas las temporadas</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="filtroFechaInicio" class="form-label">Fecha Inicio:</label>
-                            <input type="date" id="filtroFechaInicio" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="filtroFechaFin" class="form-label">Fecha Fin:</label>
-                            <input type="date" id="filtroFechaFin" class="form-control">
-                        </div>
-                        <div class="col-12 text-end">
-                            <button type="reset" class="btn btn-outline-secondary me-2">
-                                <i class="fas fa-undo me-2"></i>Limpiar
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search me-2"></i>Buscar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Tabla de Tarifas -->
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Tipo Hab.</th>
-                                    <th class="text-end">Precio</th>
-                                    <th>Temporada</th>
-                                    <th>F. Inicio</th>
-                                    <th>F. Fin</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-tarifas">
-                                <!-- Se llena con JS -->
-                            </tbody>
-                        </table>
+                <!-- Filtros de búsqueda -->
+                <div class="card mb-4 mt-4">
+                    <div class="card-body">
+                        <h3 class="card-title h5 mb-3">Buscar Tarifas</h3>
+                        <form onsubmit="event.preventDefault(); listarTarifasPaginado(1);" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="filtroTipoHab" class="form-label">Tipo Habitación:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-bed"></i></span>
+                                    <select id="filtroTipoHab" class="form-select">
+                                        <option value="">Todos los tipos</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtroTemporada" class="form-label">Temporada:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    <select id="filtroTemporada" class="form-select">
+                                        <option value="">Todas las temporadas</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtroFechaInicio" class="form-label">Fecha Inicio:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar-plus"></i></span>
+                                    <input type="date" id="filtroFechaInicio" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtroFechaFin" class="form-label">Fecha Fin:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar-minus"></i></span>
+                                    <input type="date" id="filtroFechaFin" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-12 text-end">
+                                <button type="reset" class="btn btn-outline-secondary me-2">
+                                    <i class="fas fa-undo me-2"></i>Limpiar
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>Buscar
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <div id="paginacionTarifas" class="mt-4">
-                        <!-- Se llena con JS -->
+                </div>
+
+                <!-- Tabla de Tarifas -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h3 class="card-title h5 mb-3">Listado de Tarifas</h3>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover check-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Tipo Hab.</th>
+                                        <th class="text-end">Precio</th>
+                                        <th>Temporada</th>
+                                        <th>F. Inicio</th>
+                                        <th>F. Fin</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-tarifas">
+                                    <!-- Se llena con JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="paginacionTarifas" class="mt-3 text-center">
+                            <!-- Se llena con JS -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -164,34 +171,49 @@ if (!isset($_SESSION['usuario_id'])) {
                     <form id="formTarifa" onsubmit="guardarTarifa(event)">
                         <div class="mb-3">
                             <label for="nombreTarifa" class="form-label">Nombre:</label>
-                            <input type="text" class="form-control" id="nombreTarifa" required>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                <input type="text" class="form-control" id="nombreTarifa" required>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="tipoHabitacion" class="form-label">Tipo Habitación:</label>
-                            <select class="form-select" id="tipoHabitacion" required>
-                                <option value="">Seleccione tipo</option>
-                            </select>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-bed"></i></span>
+                                <select class="form-select" id="tipoHabitacion" required>
+                                    <option value="">Seleccione tipo</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="precio" class="form-label">Precio:</label>
                             <div class="input-group">
-                                <span class="input-group-text">€</span>
+                                <span class="input-group-text"><i class="fas fa-euro-sign"></i></span>
                                 <input type="number" step="0.01" class="form-control" id="precio" required>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="temporada" class="form-label">Temporada:</label>
-                            <select class="form-select" id="temporada" required>
-                                <option value="">Seleccione temporada</option>
-                            </select>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                <select class="form-select" id="temporada" required>
+                                    <option value="">Seleccione temporada</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="fecha_inicio" class="form-label">Fecha Inicio:</label>
-                            <input type="date" class="form-control" id="fecha_inicio" required>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-plus"></i></span>
+                                <input type="date" class="form-control" id="fecha_inicio" required>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="fecha_fin" class="form-label">Fecha Fin:</label>
-                            <input type="date" class="form-control" id="fecha_fin" required>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-minus"></i></span>
+                                <input type="date" class="form-control" id="fecha_fin" required>
+                            </div>
                         </div>
                     </form>
                 </div>

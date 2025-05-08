@@ -21,16 +21,25 @@ function setupEventListeners() {
     
     // Métrica de reservas
     document.getElementById('booking-metric').addEventListener('change', updateReservationsChart);
+
+    // Inicializar valor del mes actual
+    const currentDate = new Date();
+    document.getElementById('occupancy-month').value = 
+        `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
 }
 
 // Cargar datos iniciales
 async function loadInitialData() {
-    await Promise.all([
-        loadStats(),
-        updateFinancialChart(),
-        updateOccupancyData(),
-        updateReservationsChart()
-    ]);
+    try {
+        await Promise.all([
+            loadStats(),
+            updateFinancialChart(),
+            updateOccupancyData(),
+            updateReservationsChart()
+        ]);
+    } catch (error) {
+        console.error('Error al cargar datos iniciales:', error);
+    }
 }
 
 // Cargar estadísticas generales
@@ -50,6 +59,8 @@ async function loadStats() {
 // Actualizar tarjeta de estadística con animación
 function updateStatCard(id, value, suffix = '', isCurrency = false) {
     const element = document.getElementById(id);
+    if (!element) return;
+
     let start = parseInt(element.textContent);
     let end = isCurrency ? parseFloat(value) : parseInt(value);
     // Validar que los valores sean finitos y no negativos
@@ -212,11 +223,11 @@ function updateOccupancyChart(data) {
 function updateRoomTypeStats(data) {
     const tbody = document.getElementById('room-type-stats');
     if (!Array.isArray(data)) {
-        tbody.innerHTML = '<tr><td colspan="5">Sin datos de tipos de habitación</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin datos disponibles</td></tr>';
         return;
     }
     tbody.innerHTML = data.map(type => `
-        <tr>
+        <tr class="animate-fade-in">
             <td>${type.nombre}</td>
             <td>${type.disponibles}</td>
             <td>${type.ocupadas}</td>
@@ -322,6 +333,7 @@ function updateAverageStay(data) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         return;
     }
+    if (avgStayChart) avgStayChart.destroy();
     avgStayChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -363,6 +375,9 @@ function exportReport(type, format) {
             break;
         case 'reservations':
             params.set('metric', document.getElementById('booking-metric').value);
+            break;
+        case 'all':
+            // No necesita parámetros adicionales
             break;
     }
     

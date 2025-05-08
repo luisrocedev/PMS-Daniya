@@ -50,9 +50,26 @@ if ($method === 'GET') {
     // Si pidieron un empleado específico (GET /empleados.php?id=XX)
     if ($id) {
         $empleado = $superModel->getById('empleados', $id);
+        if ($empleado) {
+            // Obtener nombre de rol y departamento
+            $pdo = Database::getInstance()->getConnection();
+            $sql = "SELECT r.nombre_rol, d.nombre_departamento FROM empleados e LEFT JOIN roles r ON e.id_rol = r.id_rol LEFT JOIN departamentos d ON e.id_departamento = d.id_departamento WHERE e.id_empleado = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+            $extra = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($extra) {
+                $empleado['nombre_rol'] = $extra['nombre_rol'];
+                $empleado['nombre_departamento'] = $extra['nombre_departamento'];
+            }
+        }
         echo json_encode($empleado);
         exit;
     } else {
+        // Permitir alias 'departamento' para compatibilidad con JS
+        if (isset($_GET['departamento']) && !isset($_GET['dep'])) {
+            $dep = $_GET['departamento'];
+        }
         // Construimos la clausula WHERE dinámica
         $where = " WHERE 1=1 ";
         $params = [];
@@ -70,9 +87,7 @@ if ($method === 'GET') {
             $params[':dep'] = $dep;
         }
 
-        // Primero, calculamos el total de registros que coinciden
         $pdo = Database::getInstance()->getConnection();
-
         $sqlCount = "SELECT COUNT(*) as total FROM empleados $where";
         $stmtCount = $pdo->prepare($sqlCount);
         foreach ($params as $k => $v) {
@@ -81,22 +96,17 @@ if ($method === 'GET') {
         $stmtCount->execute();
         $total = $stmtCount->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        // Luego, la query principal con LIMIT/OFFSET
-        $sql = "SELECT * FROM empleados $where LIMIT :limit OFFSET :offset";
+        // JOIN para obtener nombre de rol y departamento
+        $sql = "SELECT e.*, r.nombre_rol, d.nombre_departamento FROM empleados e LEFT JOIN roles r ON e.id_rol = r.id_rol LEFT JOIN departamentos d ON e.id_departamento = d.id_departamento $where LIMIT :limit OFFSET :offset";
         $stmt = $pdo->prepare($sql);
-
-        // Bindear parámetros de texto
         foreach ($params as $k => $v) {
             $stmt->bindValue($k, $v);
         }
-        // Bindear limit/offset como enteros
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-
         $stmt->execute();
         $empleados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Devolvemos JSON con data + info de paginación
         echo json_encode([
             'data'  => $empleados,
             'total' => (int)$total,
@@ -138,30 +148,49 @@ if ($method === 'GET') {
     exit;
 } elseif ($method === 'PUT') {
     // Actualizar
-    if (!$id) {
-        echo json_encode(['error' => 'Falta id para actualizar']);
-        exit;
-    }
-    parse_str(file_get_contents("php://input"), $input);
-
-    $ok = $superModel->update('empleados', $id, $input);
-    if ($ok) {
-        echo json_encode(['success' => true, 'msg' => 'Empleado actualizado']);
-    } else {
-        echo json_encode(['error' => 'No se pudo actualizar el empleado']);
+    try {
+        if (!$id) {
+            echo json_encode(['error' => 'Falta id para actualizar']);
+            exit;
+        }
+        parse_str(file_get_contents("php://input"), $input);
+        $ok = $superModel->update('empleados', $id, $input);
+        if ($ok) {
+            echo json_encode(['success' => true, 'msg' => 'Empleado actualizado']);
+        } else {
+            echo json_encode(['error' => 'No se pudo actualizar el empleado']);
+        }
+    } catch (Throwable $e) {
+        // Detectar error de clave foránea (MySQL 1451)
+        if (strpos($e->getMessage(), '1451') !== false) {
+            echo json_encode(['error' => 'No se puede editar este empleado porque tiene registros asociados (por ejemplo, asistencia).']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error interno: ' . $e->getMessage()]);
+        }
     }
     exit;
 } elseif ($method === 'DELETE') {
     // Eliminar
-    if (!$id) {
-        echo json_encode(['error' => 'Falta id para eliminar']);
-        exit;
-    }
-    $ok = $superModel->delete('empleados', $id);
-    if ($ok) {
-        echo json_encode(['success' => true, 'msg' => 'Empleado eliminado']);
-    } else {
-        echo json_encode(['error' => 'No se pudo eliminar el empleado']);
+    try {
+        if (!$id) {
+            echo json_encode(['error' => 'Falta id para eliminar']);
+            exit;
+        }
+        $ok = $superModel->delete('empleados', $id);
+        if ($ok) {
+            echo json_encode(['success' => true, 'msg' => 'Empleado eliminado']);
+        } else {
+            echo json_encode(['error' => 'No se pudo eliminar el empleado']);
+        }
+    } catch (Throwable $e) {
+        // Detectar error de clave foránea (MySQL 1451)
+        if (strpos($e->getMessage(), '1451') !== false) {
+            echo json_encode(['error' => 'No se puede eliminar este empleado porque tiene registros asociados (por ejemplo, asistencia).']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error interno: ' . $e->getMessage()]);
+        }
     }
     exit;
 } else {

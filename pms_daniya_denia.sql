@@ -807,3 +807,21 @@ COMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
 CREATE TABLE IF NOT EXISTS `login_logs` ( `id_log` INT AUTO_INCREMENT PRIMARY KEY, `usuario_id` INT NOT NULL, `ip_address` VARCHAR(45) NOT NULL, `fecha_login` TIMESTAMP DEFAULT CURRENT_TIMESTAMP, `estado` VARCHAR(20) NOT NULL, FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id_usuario`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `campanas_marketing` (
+  `id_campana` INT AUTO_INCREMENT PRIMARY KEY,
+  `nombre` VARCHAR(100) NOT NULL,
+  `asunto` VARCHAR(200) NOT NULL,
+  `contenido_html` TEXT NOT NULL,
+  `fecha_creacion` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_envio` DATETIME DEFAULT NULL,
+  `estado` ENUM('borrador','programada','enviada') DEFAULT 'borrador'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `campanas_marketing` (`nombre`, `asunto`, `contenido_html`, `estado`)
+VALUES (
+  'Promoción de Verano',
+  '¡Oferta especial de verano en Hotel Daniya Denia!',
+  '<h1>¡Descubre Nuestras Ofertas de Verano!</h1><p>Disfruta de una experiencia única con hasta 30% de descuento en habitaciones.</p><ul><li>Acceso gratuito al spa</li><li>Desayuno buffet incluido</li><li>Niños gratis hasta 12 años</li></ul>',
+  'borrador'
+);

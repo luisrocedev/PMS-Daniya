@@ -10,19 +10,22 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeApp() {
   cargarCheckIns();
   setupAutoRefresh();
-  initializeCheckinsHoyPageNav(); // Nueva función para paginación interna
 }
 
 // Configurar auto-refresh
 function setupAutoRefresh() {
   const autoRefreshToggle = document.getElementById('auto-refresh');
-  autoRefreshToggle.addEventListener('change', () => {
-    if (autoRefreshToggle.checked) {
-      refreshInterval = setInterval(cargarCheckIns, REFRESH_INTERVAL);
-    } else {
-      clearInterval(refreshInterval);
-    }
-  });
+  if (autoRefreshToggle) {
+    autoRefreshToggle.addEventListener('change', () => {
+      if (autoRefreshToggle.checked) {
+        refreshInterval = setInterval(cargarCheckIns, REFRESH_INTERVAL);
+        mostrarMensaje('Auto-actualización activada', 'info');
+      } else {
+        clearInterval(refreshInterval);
+        mostrarMensaje('Auto-actualización desactivada', 'info');
+      }
+    });
+  }
 }
 
 // Cargar datos de check-ins
@@ -58,7 +61,7 @@ function updateStats(data) {
   Object.entries(stats).forEach(([id, value]) => {
     const element = document.getElementById(id);
     if (element) {
-      animateValue(element, parseInt(element.textContent), value, 500);
+      animateValue(element, parseInt(element.textContent) || 0, value, 500);
     }
   });
 
@@ -91,6 +94,8 @@ function animateValue(element, start, end, duration) {
 // Renderizar tabla de check-ins
 function renderCheckInsTable(data) {
   const tbody = document.getElementById('tabla-checkins-hoy');
+  if (!tbody) return;
+  
   const checkins = data.checkins || [];
   
   tbody.innerHTML = checkins.length ? checkins.map(ci => `
@@ -107,7 +112,7 @@ function renderCheckInsTable(data) {
       </td>
       <td>${ci.numero_habitacion}</td>
       <td>
-        <span class="checkin-status ${getStatusClass(ci.estado)}">
+        <span class="badge ${getStatusClass(ci.estado)}">
           ${ci.estado}
         </span>
       </td>
@@ -124,6 +129,7 @@ function renderCheckInsTable(data) {
 // Renderizar próximas llegadas
 function renderUpcomingArrivals(arrivals) {
   const container = document.getElementById('upcoming-arrivals');
+  if (!container) return;
   
   container.innerHTML = arrivals.length ? arrivals.map(arrival => `
     <div class="timeline-item">
@@ -132,13 +138,29 @@ function renderUpcomingArrivals(arrivals) {
         <div class="guest">${arrival.nombre} ${arrival.apellidos}</div>
         <div class="room">Habitación ${arrival.numero_habitacion}</div>
         <div class="mt-2">
-          <span class="checkin-status pending">
+          <span class="badge bg-warning">
             <i class="fas fa-clock me-1"></i>Pendiente
           </span>
         </div>
       </div>
     </div>
   `).join('') : '<p class="text-center text-muted">No hay llegadas programadas próximamente</p>';
+}
+
+// Mostrar mensajes al usuario
+function mostrarMensaje(mensaje, tipo = 'info') {
+  const container = document.createElement('div');
+  container.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+  container.style.zIndex = '1050';
+  container.innerHTML = `
+    ${mensaje}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.body.appendChild(container);
+  
+  setTimeout(() => {
+    container.remove();
+  }, 3000);
 }
 
 // Función auxiliar para formatear hora
@@ -152,54 +174,9 @@ function formatTime(dateStr) {
 
 // Función auxiliar para determinar clase de estado
 function getStatusClass(estado) {
-  switch (estado.toLowerCase()) {
-    case 'pendiente':
-      return 'pending';
-    case 'completado':
-      return 'completed';
-    case 'retrasado':
-      return 'delayed';
-    default:
-      return '';
-  }
-}
-
-// Función de paginación interna para checkins de hoy
-function initializeCheckinsHoyPageNav() {
-  const pages = document.querySelectorAll('#checkins-hoy-pages .content-page');
-  const prevBtn = document.getElementById('prevCh');
-  const nextBtn = document.getElementById('nextCh');
-  const currentPageEl = document.getElementById('currentChPage');
-  const totalPagesEl = document.getElementById('totalChPages');
-  let current = 0;
-
-  // Establecer el total de páginas
-  if (totalPagesEl) totalPagesEl.textContent = pages.length;
-
-  function updateButtons() {
-    if (prevBtn) prevBtn.disabled = current === 0;
-    if (nextBtn) nextBtn.disabled = current === pages.length - 1;
-    if (currentPageEl) currentPageEl.textContent = current + 1;
-  }
-
-  function showPage(index) {
-    pages[current].classList.remove('active');
-    current = index;
-    pages[current].classList.add('active');
-    updateButtons();
-  }
-
-  if (prevBtn) {
-    prevBtn.addEventListener('click', () => { 
-      if (current > 0) showPage(current - 1); 
-    });
-  }
-  
-  if (nextBtn) {
-    nextBtn.addEventListener('click', () => { 
-      if (current < pages.length - 1) showPage(current + 1); 
-    });
-  }
-
-  updateButtons();
+  return {
+    'pendiente': 'bg-warning',
+    'completado': 'bg-success',
+    'retrasado': 'bg-danger'
+  }[estado.toLowerCase()] || 'bg-secondary';
 }

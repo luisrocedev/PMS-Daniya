@@ -19,6 +19,7 @@ try {
     require_once __DIR__ . '/../core/EmailService.php';
 
     $superModel = new SuperModel();
+    $pdo = Database::getInstance()->getConnection();
 
     // Obtener datos del formulario
     $emailType = $_POST['emailType'] ?? '';
@@ -53,21 +54,35 @@ try {
     $successfulSends = 0;
     $failedSends = [];
 
-    // Enviar emails según el tipo seleccionado
+    // Enviar emails según la campaña seleccionada
     foreach ($clients as $client) {
         $emailContent = '';
         $subject = '';
 
-        switch ($emailType) {
-            case 'promocion_verano':
-                $emailContent = file_get_contents(__DIR__ . '/../api/emails/promocion_verano.html');
-                $emailContent = str_replace('[Nombre del Cliente]', $client['nombre'], $emailContent);
-                $emailContent = str_replace('[Fecha Límite]', '31 de diciembre de 2023', $emailContent);
-                $emailContent = str_replace('[Enlace a la Página de Reservas]', 'https://www.daniyadenia.com/reservas', $emailContent);
-                $subject = 'Promoción de Verano - Hotel Daniya Denia';
-                break;
-
-                // Añade más casos según los tipos de emails que tengas
+        // Si el emailType es numérico, buscar campaña dinámica
+        if (is_numeric($emailType)) {
+            $stmt = $pdo->prepare("SELECT * FROM campanas_marketing WHERE id_campana = ?");
+            $stmt->execute([$emailType]);
+            $campana = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($campana) {
+                $emailContent = $campana['contenido_html'];
+                $subject = $campana['asunto'];
+            } else {
+                $failedSends[] = $client['email'];
+                continue;
+            }
+        } else {
+            // Compatibilidad con campañas hardcodeadas
+            switch ($emailType) {
+                case 'promocion_verano':
+                    $emailContent = file_get_contents(__DIR__ . '/../api/emails/promocion_verano.html');
+                    $emailContent = str_replace('[Nombre del Cliente]', $client['nombre'], $emailContent);
+                    $emailContent = str_replace('[Fecha Límite]', '31 de diciembre de 2023', $emailContent);
+                    $emailContent = str_replace('[Enlace a la Página de Reservas]', 'https://www.daniyadenia.com/reservas', $emailContent);
+                    $subject = 'Promoción de Verano - Hotel Daniya Denia';
+                    break;
+                    // Añade más casos según los tipos de emails que tengas
+            }
         }
 
         // Intentar enviar el email

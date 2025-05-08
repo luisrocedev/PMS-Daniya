@@ -1,5 +1,4 @@
 <?php
-// public/clientes.php
 session_start();
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../login.php');
@@ -11,155 +10,230 @@ if (!isset($_SESSION['usuario_id'])) {
 
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Clientes</title>
+    <title>Gestión de Clientes - PMS Daniya Denia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" defer></script>
 </head>
 
 <body>
-
     <?php include __DIR__ . '/../partials/navbar.php'; ?>
 
-    <div style="display:flex; margin-top:1rem;">
+    <div class="d-flex" style="margin-top:1rem;">
         <?php include __DIR__ . '/../partials/sidebar.php'; ?>
 
         <div class="main-content">
-            <h2 class="page-title">Gestión de Clientes</h2>
-
-            <div id="clientes-pages">
-                <div class="content-page active" data-page="1">
-                    <!-- Filtros -->
-                    <div class="card">
-                        <h3>Buscar Clientes</h3>
-                        <form onsubmit="event.preventDefault(); listarClientesPaginado(1);">
-                            <label for="searchCli">Buscar (Nombre/Apellidos/DNI):</label>
-                            <input type="text" id="searchCli" class="form-control">
-                            <button type="submit" class="btn btn-primary mt-2">Aplicar Filtro</button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="content-page" data-page="2">
-                    <!-- Tabla y paginación -->
-                    <div class="card">
-                        <h3>Listado de Clientes</h3>
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Apellidos</th>
-                                    <th>DNI</th>
-                                    <th>Email</th>
-                                    <th>Teléfono</th>
-                                    <th>Estado Funnel</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-clientes">
-                                <!-- Se llena con JS -->
-                            </tbody>
-                        </table>
-                        <div id="paginacionClientes" style="margin-top:1rem;">
-                            <!-- Botones Anterior/Siguiente -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="content-page" data-page="3">
-                    <!-- Formulario de creación -->
-                    <div class="card">
-                        <h3>Crear Cliente</h3>
-                        <form onsubmit="event.preventDefault(); crearCliente();">
-                            <label for="nombreCli">Nombre:</label>
-                            <input type="text" id="nombreCli" class="form-control" required>
-
-                            <label for="apellidosCli">Apellidos:</label>
-                            <input type="text" id="apellidosCli" class="form-control" required>
-
-                            <label for="dniCli">DNI:</label>
-                            <input type="text" id="dniCli" class="form-control" required>
-
-                            <label for="emailCli">Email:</label>
-                            <input type="email" id="emailCli" class="form-control">
-
-                            <label for="telCli">Teléfono:</label>
-                            <input type="text" id="telCli" class="form-control">
-
-                            <label for="dirCli">Dirección:</label>
-                            <input type="text" id="dirCli" class="form-control">
-
-                            <!-- NUEVO: Selector para Estado Funnel -->
-                            <label for="estado_funnel">Estado Funnel:</label>
-                            <select id="estado_funnel" class="form-select">
-                                <option value="">Selecciona un estado (opcional)</option>
-                                <option value="Nuevo">Nuevo</option>
-                                <option value="Interesado">Interesado</option>
-                                <option value="En Negociacion">En Negociacion</option>
-                                <option value="Cerrado">Cerrado</option>
-                            </select>
-
-                            <button type="submit" class="btn btn-success mt-2">Crear</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Controles de navegación de páginas -->
-                <div class="page-nav text-center mt-4">
-                    <button id="prevCli" class="btn btn-secondary me-2">Anterior</button>
-                    <span class="page-indicator">Página <span id="currentCliPage">1</span> de <span id="totalCliPages">3</span></span>
-                    <button id="nextCli" class="btn btn-secondary">Siguiente</button>
+            <!-- Header de la página -->
+            <div class="page-header">
+                <h2 class="page-title">Gestión de Clientes</h2>
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="crear-tab" data-bs-toggle="tab" data-bs-target="#crear">
+                        <i class="fas fa-plus me-2"></i>Nuevo Cliente
+                    </button>
                 </div>
             </div>
 
-            <!-- Modal de Edición -->
-            <div class="modal fade" id="modalEditarCliente" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Editar Cliente</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <!-- Contenido principal con scroll -->
+            <div class="content-wrapper">
+                <!-- Resumen estadístico -->
+                <div class="grid-container">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <i class="fas fa-users fa-2x text-primary mb-3"></i>
+                            <div class="stat-value" id="totalClientes">0</div>
+                            <div class="stat-label">Clientes Totales</div>
                         </div>
-                        <div class="modal-body">
-                            <form id="formEditarCliente">
-                                <input type="hidden" id="editId">
-                                <div class="mb-3">
-                                    <label for="editNombre" class="form-label">Nombre:</label>
-                                    <input type="text" id="editNombre" class="form-control" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="editApellidos" class="form-label">Apellidos:</label>
-                                    <input type="text" id="editApellidos" class="form-control" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="editDni" class="form-label">DNI:</label>
-                                    <input type="text" id="editDni" class="form-control" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="editEmail" class="form-label">Email:</label>
-                                    <input type="email" id="editEmail" class="form-control">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="editTelefono" class="form-label">Teléfono:</label>
-                                    <input type="text" id="editTelefono" class="form-control">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="editEstadoFunnel" class="form-label">Estado Funnel:</label>
-                                    <select id="editEstadoFunnel" class="form-select">
-                                        <option value="">Sin estado</option>
-                                        <option value="Nuevo">Nuevo</option>
-                                        <option value="Interesado">Interesado</option>
-                                        <option value="En Negociacion">En Negociación</option>
-                                        <option value="Cerrado">Cerrado</option>
-                                    </select>
-                                </div>
-                            </form>
+                    </div>
+
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <i class="fas fa-user-plus fa-2x text-success mb-3"></i>
+                            <div class="stat-value" id="clientesNuevos">0</div>
+                            <div class="stat-label">Clientes Nuevos</div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <button type="button" class="btn btn-primary" onclick="actualizarCliente()">Guardar cambios</button>
+                    </div>
+
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <i class="fas fa-handshake fa-2x text-warning mb-3"></i>
+                            <div class="stat-value" id="clientesInteresados">0</div>
+                            <div class="stat-label">Clientes Interesados</div>
+                        </div>
+                    </div>
+
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <i class="fas fa-check-circle fa-2x text-info mb-3"></i>
+                            <div class="stat-value" id="clientesCerrados">0</div>
+                            <div class="stat-label">Clientes Cerrados</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestañas de navegación -->
+                <ul class="nav nav-tabs mb-4" id="clientesTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="buscar-tab" data-bs-toggle="tab" data-bs-target="#buscar" type="button" role="tab">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="listado-tab" data-bs-toggle="tab" data-bs-target="#listado" type="button" role="tab">
+                            <i class="fas fa-list me-2"></i>Listado
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="crear-tab-nav" data-bs-toggle="tab" data-bs-target="#crear" type="button" role="tab">
+                            <i class="fas fa-plus me-2"></i>Crear
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Contenido de las pestañas -->
+                <div class="tab-content" id="clientesTabsContent">
+                    <!-- Tab Búsqueda -->
+                    <div class="tab-pane fade show active" id="buscar" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 class="card-title h5 mb-3">Buscar Clientes</h3>
+                                <form id="formBuscarCliente" class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="searchCli" class="form-label">Buscar por Nombre/Apellidos/DNI:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                            <input type="text" id="searchCli" class="form-control" placeholder="Ingrese término de búsqueda...">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="filtroEstado" class="form-label">Estado Funnel:</label>
+                                        <select id="filtroEstado" class="form-select">
+                                            <option value="">Todos</option>
+                                            <option value="Nuevo">Nuevo</option>
+                                            <option value="Interesado">Interesado</option>
+                                            <option value="En Negociacion">En Negociación</option>
+                                            <option value="Cerrado">Cerrado</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search me-2"></i>Buscar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Listado -->
+                    <div class="tab-pane fade" id="listado" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h3 class="card-title h5 mb-0">Listado de Clientes</h3>
+                                    <div class="export-buttons">
+                                        <button class="btn btn-outline-success" onclick="exportarClientes('excel')">
+                                            <i class="fas fa-file-excel me-2"></i>Excel
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="exportarClientes('pdf')">
+                                            <i class="fas fa-file-pdf me-2"></i>PDF
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-hover check-table">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Nombre</th>
+                                                <th>Apellidos</th>
+                                                <th>DNI</th>
+                                                <th>Email</th>
+                                                <th>Teléfono</th>
+                                                <th>Estado Funnel</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tabla-clientes">
+                                            <!-- Se llena con JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="paginacionClientes" class="d-flex justify-content-between align-items-center mt-3">
+                                    <!-- Se llena con JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Crear -->
+                    <div class="tab-pane fade" id="crear" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 class="card-title h5 mb-3">Crear Nuevo Cliente</h3>
+                                <form id="formCrearCliente" class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="nombreCli" class="form-label">Nombre:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" id="nombreCli" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="apellidosCli" class="form-label">Apellidos:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" id="apellidosCli" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="dniCli" class="form-label">DNI:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                            <input type="text" id="dniCli" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="emailCli" class="form-label">Email:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                            <input type="email" id="emailCli" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="telCli" class="form-label">Teléfono:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                            <input type="text" id="telCli" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="dirCli" class="form-label">Dirección:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-home"></i></span>
+                                            <input type="text" id="dirCli" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="estado_funnel" class="form-label">Estado Funnel:</label>
+                                        <select id="estado_funnel" class="form-select">
+                                            <option value="">Selecciona un estado</option>
+                                            <option value="Nuevo">Nuevo</option>
+                                            <option value="Interesado">Interesado</option>
+                                            <option value="En Negociacion">En Negociación</option>
+                                            <option value="Cerrado">Cerrado</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mt-4">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-save me-2"></i>Guardar Cliente
+                                        </button>
+                                        <button type="reset" class="btn btn-outline-secondary ms-2">
+                                            <i class="fas fa-undo me-2"></i>Limpiar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -167,286 +241,85 @@ if (!isset($_SESSION['usuario_id'])) {
         </div>
     </div>
 
-    <script>
-        // ====================== PAGINACIÓN Y FILTRO ======================
-        let limitCliente = 5;
+    <!-- Modal de Edición -->
+    <div class="modal fade" id="modalEditarCliente" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarCliente" class="row g-3">
+                        <input type="hidden" id="editId">
+                        <div class="col-md-6">
+                            <label for="editNombre" class="form-label">Nombre:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" id="editNombre" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editApellidos" class="form-label">Apellidos:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" id="editApellidos" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editDni" class="form-label">DNI:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                <input type="text" id="editDni" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editEmail" class="form-label">Email:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" id="editEmail" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editTelefono" class="form-label">Teléfono:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                <input type="text" id="editTelefono" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editDireccion" class="form-label">Dirección:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-home"></i></span>
+                                <input type="text" id="editDireccion" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editEstadoFunnel" class="form-label">Estado Funnel:</label>
+                            <select id="editEstadoFunnel" class="form-select">
+                                <option value="">Sin estado</option>
+                                <option value="Nuevo">Nuevo</option>
+                                <option value="Interesado">Interesado</option>
+                                <option value="En Negociacion">En Negociación</option>
+                                <option value="Cerrado">Cerrado</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="actualizarCliente()">
+                        <i class="fas fa-save me-2"></i>Guardar cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        function listarClientesPaginado(page = 1) {
-            const search = document.getElementById('searchCli').value || '';
-            let url = `../api/clientes.php?page=${page}&limit=${limitCliente}`;
-            if (search) {
-                url += `&search=${encodeURIComponent(search)}`;
-            }
-
-            fetch(url)
-                .then(r => r.json())
-                .then(obj => {
-                    // obj: { data, total, page, limit }
-                    const data = obj.data || [];
-                    const total = obj.total || 0;
-                    const pag = obj.page || 1;
-                    const lim = obj.limit || limitCliente;
-
-                    // Llenar tabla
-                    const tbody = document.getElementById('tabla-clientes');
-                    tbody.innerHTML = '';
-                    data.forEach(cli => {
-                        const tr = document.createElement('tr');
-                        const estadoClass = cli.estado_funnel ? `funnel-${cli.estado_funnel.toLowerCase().replace(' ', '-')}` : '';
-
-                        tr.innerHTML = `
-                            <td>${cli.id_cliente}</td>
-                            <td>${cli.nombre}</td>
-                            <td>${cli.apellidos}</td>
-                            <td>${cli.dni}</td>
-                            <td>${cli.email || ''}</td>
-                            <td>${cli.telefono || ''}</td>
-                            <td><span class="badge ${estadoClass}">${cli.estado_funnel || 'Sin estado'}</span></td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="cliente_detalle_nuevo.php?id=${cli.id_cliente}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-info-circle"></i>
-                                    </a>
-                                    <button class="btn btn-sm btn-warning" onclick="abrirModalEditar(${cli.id_cliente})" data-bs-toggle="modal" data-bs-target="#modalEditarCliente">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="eliminarCliente(${cli.id_cliente})">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-
-                    renderPaginacionClientes(pag, lim, total);
-                })
-                .catch(err => console.error(err));
-        }
-
-        function renderPaginacionClientes(page, limit, total) {
-            const divPag = document.getElementById('paginacionClientes');
-            divPag.innerHTML = '';
-
-            const totalPages = Math.ceil(total / limit);
-
-            if (page > 1) {
-                const btnPrev = document.createElement('button');
-                btnPrev.classList.add('btn');
-                btnPrev.textContent = 'Anterior';
-                btnPrev.onclick = () => listarClientesPaginado(page - 1);
-                divPag.appendChild(btnPrev);
-            }
-
-            const spanInfo = document.createElement('span');
-            spanInfo.style.margin = '0 10px';
-            spanInfo.textContent = `Página ${page} de ${totalPages} (Total: ${total})`;
-            divPag.appendChild(spanInfo);
-
-            if (page < totalPages) {
-                const btnNext = document.createElement('button');
-                btnNext.classList.add('btn');
-                btnNext.textContent = 'Siguiente';
-                btnNext.onclick = () => listarClientesPaginado(page + 1);
-                divPag.appendChild(btnNext);
-            }
-        }
-
-        // ====================== CREAR CLIENTE ======================
-        function crearCliente() {
-            const nombre = document.getElementById('nombreCli').value;
-            const apellidos = document.getElementById('apellidosCli').value;
-            const dni = document.getElementById('dniCli').value;
-            const email = document.getElementById('emailCli').value;
-            const telefono = document.getElementById('telCli').value;
-            const direccion = document.getElementById('dirCli').value;
-            const estadoFunnel = document.getElementById('estado_funnel').value; // Nuevo campo
-
-            // Preparamos los datos a enviar, incluyendo el campo 'estado_funnel' si se seleccionó
-            const params = new URLSearchParams({
-                nombre,
-                apellidos,
-                dni,
-                email,
-                telefono,
-                direccion
-            });
-            if (estadoFunnel) {
-                params.append('estado_funnel', estadoFunnel);
-            }
-
-            fetch('../api/clientes.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: params
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.msg);
-                        listarClientesPaginado(1);
-                        // Limpieza de campos
-                        document.getElementById('nombreCli').value = '';
-                        document.getElementById('apellidosCli').value = '';
-                        document.getElementById('dniCli').value = '';
-                        document.getElementById('emailCli').value = '';
-                        document.getElementById('telCli').value = '';
-                        document.getElementById('dirCli').value = '';
-                        document.getElementById('estado_funnel').value = '';
-                    } else {
-                        alert(data.error || 'No se pudo crear el cliente');
-                    }
-                })
-                .catch(err => console.error(err));
-        }
-
-        // ====================== ELIMINAR CLIENTE ======================
-        function eliminarCliente(idCli) {
-            if (!confirm('¿Seguro que deseas eliminar este cliente?')) return;
-            fetch(`../api/clientes.php?id=${idCli}`, {
-                    method: 'DELETE'
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.msg);
-                        listarClientesPaginado();
-                    } else {
-                        alert(data.error || 'No se pudo eliminar');
-                    }
-                })
-                .catch(err => console.error(err));
-        }
-
-        // ====================== VALIDACIÓN DNI ======================
-        function validarDNI(dni) {
-            const letras = "TRWAGMYFPDXBNJZSQVHLCKE";
-            const regex = /^[0-9]{8}[TRWAGMYFPDXBNJZSQVHLCKE]$/i;
-
-            if (!regex.test(dni)) return false;
-
-            const numero = dni.substr(0, 8);
-            const letra = dni.substr(8, 1).toUpperCase();
-            const letraCalculada = letras.charAt(parseInt(numero) % 23);
-
-            return letra === letraCalculada;
-        }
-
-        // ====================== EDICIÓN DE CLIENTE ======================
-        function abrirModalEditar(idCliente) {
-            fetch(`../api/clientes.php?id=${idCliente}`)
-                .then(r => r.json())
-                .then(cliente => {
-                    document.getElementById('editId').value = cliente.id_cliente;
-                    document.getElementById('editNombre').value = cliente.nombre;
-                    document.getElementById('editApellidos').value = cliente.apellidos;
-                    document.getElementById('editDni').value = cliente.dni;
-                    document.getElementById('editEmail').value = cliente.email || '';
-                    document.getElementById('editTelefono').value = cliente.telefono || '';
-                    document.getElementById('editEstadoFunnel').value = cliente.estado_funnel || '';
-                })
-                .catch(err => console.error('Error al cargar cliente:', err));
-        }
-
-        function actualizarCliente() {
-            const id = document.getElementById('editId').value;
-            const nombre = document.getElementById('editNombre').value;
-            const apellidos = document.getElementById('editApellidos').value;
-            const dni = document.getElementById('editDni').value;
-            const email = document.getElementById('editEmail').value;
-            const telefono = document.getElementById('editTelefono').value;
-            const estadoFunnel = document.getElementById('editEstadoFunnel').value;
-
-            if (!validarDNI(dni)) {
-                alert('El DNI introducido no es válido');
-                return;
-            }
-
-            const params = new URLSearchParams({
-                nombre,
-                apellidos,
-                dni,
-                email,
-                telefono,
-                estado_funnel: estadoFunnel
-            });
-
-            fetch(`../api/clientes.php?id=${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: params
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.msg);
-                        listarClientesPaginado();
-                        bootstrap.Modal.getInstance(document.getElementById('modalEditarCliente')).hide();
-                    } else {
-                        alert(data.error || 'No se pudo actualizar el cliente');
-                    }
-                })
-                .catch(err => console.error('Error al actualizar:', err));
-        }
-
-        // Añadir validación DNI al crear cliente
-        document.getElementById('dniCli').addEventListener('change', function() {
-            if (!validarDNI(this.value)) {
-                alert('El DNI introducido no es válido');
-                this.value = '';
-            }
-        });
-
-        // ====================== CARGA INICIAL ======================
-        document.addEventListener('DOMContentLoaded', () => {
-            listarClientesPaginado(1);
-            initializeClientesPagesNav(); // Inicializar paginación interna
-        });
-
-        // Función de paginación interna para la sección de clientes
-        function initializeClientesPagesNav() {
-            const pages = document.querySelectorAll('#clientes-pages .content-page');
-            const prevBtn = document.getElementById('prevCli');
-            const nextBtn = document.getElementById('nextCli');
-            const currentPageEl = document.getElementById('currentCliPage');
-            const totalPagesEl = document.getElementById('totalCliPages');
-            let current = 0;
-
-            // Establecer el total de páginas
-            if (totalPagesEl) totalPagesEl.textContent = pages.length;
-
-            function updateButtons() {
-                if (prevBtn) prevBtn.disabled = current === 0;
-                if (nextBtn) nextBtn.disabled = current === pages.length - 1;
-                if (currentPageEl) currentPageEl.textContent = current + 1;
-            }
-
-            function showPage(index) {
-                pages[current].classList.remove('active');
-                current = index;
-                pages[current].classList.add('active');
-                updateButtons();
-            }
-
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    if (current > 0) showPage(current - 1);
-                });
-            }
-
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    if (current < pages.length - 1) showPage(current + 1);
-                });
-            }
-
-            updateButtons();
-        }
-    </script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/clientes.js"></script>
 </body>
 
 </html>

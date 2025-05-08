@@ -1,350 +1,325 @@
-// Variables globales
-let limitePorPagina = 10;
-let tarifaEditando = null;
+let currentPage = 1;
+const itemsPerPage = 10;
 
+// Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-    initializeApp();
+    cargarTiposHabitacion();
+    cargarEstadisticas();
+    cargarTarifas(1);
+    
+    // Listeners para vista previa en tiempo real
+    document.getElementById('nombreTarifa').addEventListener('input', actualizarVistaPrevia);
+    document.getElementById('tipoHabitacion').addEventListener('change', actualizarVistaPrevia);
+    document.getElementById('precio').addEventListener('input', actualizarVistaPrevia);
+    document.getElementById('temporada').addEventListener('change', actualizarVistaPrevia);
+    document.getElementById('fecha_inicio').addEventListener('change', actualizarVistaPrevia);
+    document.getElementById('fecha_fin').addEventListener('change', actualizarVistaPrevia);
+
+    // Listener para filtros
+    document.getElementById('form-filtros').addEventListener('submit', (e) => {
+        e.preventDefault();
+        cargarTarifas(1);
+    });
 });
 
-function initializeApp() {
-    listarTarifasPaginado(1);
-    cargarTiposHabitacion();
-    cargarTemporadas();
-    
-    // Inicializar campos de fecha
-    const hoy = new Date();
-    document.getElementById('fecha_inicio').valueAsDate = hoy;
-    document.getElementById('fecha_fin').valueAsDate = new Date(hoy.getTime() + (90 * 24 * 60 * 60 * 1000)); // +90 días por defecto
-    
-    // Inicializar tooltips y popovers
-    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    tooltips.forEach(t => new bootstrap.Tooltip(t));
-}
-
-// Función para listar tarifas con paginación y filtros
-function listarTarifasPaginado(pagina = 1) {
-    const tipoHab = document.getElementById('filtroTipoHab')?.value || '';
-    const temporada = document.getElementById('filtroTemporada')?.value || '';
-    const fechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
-    const fechaFin = document.getElementById('filtroFechaFin')?.value || '';
-
-    let url = `../api/tarifas.php?page=${pagina}&limit=${limitePorPagina}`;
-    if (tipoHab) url += `&tipo_hab=${encodeURIComponent(tipoHab)}`;
-    if (temporada) url += `&temporada=${encodeURIComponent(temporada)}`;
-    if (fechaInicio) url += `&fecha_inicio=${encodeURIComponent(fechaInicio)}`;
-    if (fechaFin) url += `&fecha_fin=${encodeURIComponent(fechaFin)}`;
-
-    fetch(url)
-        .then(r => r.json())
-        .then(obj => {
-            const data = obj.data || [];
-            const total = obj.total || 0;
-            const paginaActual = obj.page || 1;
+// Funciones de carga de datos
+async function cargarTiposHabitacion() {
+    try {
+        const response = await fetch('../api/tipos_habitacion.php');
+        const data = await response.json();
+        
+        if (data.success) {
+            const selectTipos = document.getElementById('tipoHabitacion');
+            const selectFiltro = document.getElementById('filtro-tipo');
             
-            renderTablaTarifas(data);
-            renderPaginacion(paginaActual, limitePorPagina, total);
-            actualizarEstadisticas();
-        })
-        .catch(error => {
-            console.error('Error al listar tarifas:', error);
-            mostrarAlerta('Error al cargar las tarifas', 'danger');
-        });
+            data.data.forEach(tipo => {
+                selectTipos.innerHTML += `<option value="${tipo.id}">${tipo.nombre}</option>`;
+                selectFiltro.innerHTML += `<option value="${tipo.id}">${tipo.nombre}</option>`;
+            });
+        }
+    } catch (error) {
+        mostrarError('Error al cargar tipos de habitación');
+    }
 }
 
-// Renderizar tabla de tarifas
-function renderTablaTarifas(tarifas) {
-    const tbody = document.getElementById('tabla-tarifas');
-    if (!tbody) return;
+async function cargarEstadisticas() {
+    try {
+        const response = await fetch('../api/tarifas.php?stats=true');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('total-tarifas').textContent = data.stats.total;
+            document.getElementById('tarifa-promedio').textContent = data.stats.promedio + '€';
+            document.getElementById('tarifas-activas').textContent = data.stats.activas;
+            document.getElementById('tipos-habitacion').textContent = data.stats.tipos;
+        }
+    } catch (error) {
+        mostrarError('Error al cargar estadísticas');
+    }
+}
 
+async function cargarTarifas(pagina) {
+    currentPage = pagina;
+    const filtros = obtenerFiltros();
+    
+    try {
+        const response = await fetch(`../api/tarifas.php?page=${pagina}&limit=${itemsPerPage}&${new URLSearchParams(filtros)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            renderizarTarifas(data.data);
+            renderizarPaginacion(data.total);
+        }
+    } catch (error) {
+        mostrarError('Error al cargar tarifas');
+    }
+}
+
+// Funciones de renderizado
+function renderizarTarifas(tarifas) {
+    const tbody = document.getElementById('tabla-tarifas');
     tbody.innerHTML = '';
-    tarifas.forEach(t => {
+    
+    tarifas.forEach(tarifa => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${t.id_tarifa}</td>
-            <td>${t.nombre_tarifa}</td>
-            <td>${t.tipo_habitacion}</td>
-            <td class="text-end">${formatearMoneda(t.precio)}</td>
-            <td><span class="badge bg-${getTemporadaColor(t.temporada)}">${t.temporada}</span></td>
-            <td>${formatearFecha(t.fecha_inicio)}</td>
-            <td>${formatearFecha(t.fecha_fin)}</td>
+            <td>${tarifa.id}</td>
+            <td>${tarifa.nombre}</td>
+            <td>${tarifa.tipo_habitacion}</td>
+            <td class="text-end">${tarifa.precio}€</td>
+            <td>${tarifa.temporada}</td>
+            <td>${formatearFecha(tarifa.fecha_inicio)}</td>
+            <td>${formatearFecha(tarifa.fecha_fin)}</td>
+            <td class="text-center">
+                <span class="badge bg-${tarifa.estado === 'Activa' ? 'success' : 'danger'}">
+                    ${tarifa.estado}
+                </span>
+            </td>
             <td>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-info" onclick="verDetalleTarifa(${t.id_tarifa})" title="Ver Detalle">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-primary" onclick="editarTarifa(${t.id_tarifa})" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-danger" onclick="confirmarEliminar(${t.id_tarifa})" title="Eliminar">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+                <button class="btn btn-sm btn-info me-1" onclick="verDetalleTarifa(${tarifa.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-primary me-1" onclick="editarTarifa(${tarifa.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarTarifa(${tarifa.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
             </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// Renderizar paginación
-function renderPaginacion(pagina, limite, total) {
-    const divPag = document.getElementById('paginacionTarifas');
-    if (!divPag) return;
-
-    const totalPaginas = Math.ceil(total / limite);
-    let html = '<nav aria-label="Navegación de tarifas"><ul class="pagination justify-content-center">';
+function renderizarPaginacion(total) {
+    const totalPages = Math.ceil(total / itemsPerPage);
+    const paginacion = document.getElementById('paginacion-tarifas');
     
-    // Botón anterior
-    html += `
-        <li class="page-item ${pagina <= 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="event.preventDefault(); listarTarifasPaginado(${pagina - 1})" tabindex="-1">
+    let html = `
+        <div>
+            Mostrando ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, total)} de ${total}
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-outline-secondary" ${currentPage === 1 ? 'disabled' : ''} 
+                onclick="cargarTarifas(${currentPage - 1})">
                 <i class="fas fa-chevron-left"></i>
-            </a>
-        </li>
+            </button>
     `;
-
-    // Páginas
-    for (let i = 1; i <= totalPaginas; i++) {
-        html += `
-            <li class="page-item ${pagina === i ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="event.preventDefault(); listarTarifasPaginado(${i})">${i}</a>
-            </li>
-        `;
+    
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            html += `
+                <button class="btn btn-sm btn-outline-secondary ${i === currentPage ? 'active' : ''}" 
+                    onclick="cargarTarifas(${i})">${i}</button>
+            `;
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+            html += `<button class="btn btn-sm btn-outline-secondary" disabled>...</button>`;
+        }
     }
-
-    // Botón siguiente
+    
     html += `
-        <li class="page-item ${pagina >= totalPaginas ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="event.preventDefault(); listarTarifasPaginado(${pagina + 1})">
+            <button class="btn btn-sm btn-outline-secondary" ${currentPage === totalPages ? 'disabled' : ''} 
+                onclick="cargarTarifas(${currentPage + 1})">
                 <i class="fas fa-chevron-right"></i>
-            </a>
-        </li>
+            </button>
+        </div>
     `;
-
-    html += '</ul></nav>';
-    divPag.innerHTML = html;
+    
+    paginacion.innerHTML = html;
 }
 
-// Crear/Editar tarifa
-function guardarTarifa(e) {
-    e.preventDefault();
+// Funciones de gestión de tarifas
+async function guardarTarifa(event) {
+    event.preventDefault();
     
     const formData = {
-        nombre_tarifa: document.getElementById('nombreTarifa').value,
-        tipo_habitacion: document.getElementById('tipoHabitacion').value,
+        nombre: document.getElementById('nombreTarifa').value,
+        tipo_habitacion_id: document.getElementById('tipoHabitacion').value,
         precio: document.getElementById('precio').value,
         temporada: document.getElementById('temporada').value,
         fecha_inicio: document.getElementById('fecha_inicio').value,
         fecha_fin: document.getElementById('fecha_fin').value
     };
-
-    const method = tarifaEditando ? 'PUT' : 'POST';
-    const url = tarifaEditando 
-        ? `../api/tarifas.php?id=${tarifaEditando}`
-        : '../api/tarifas.php';
-
-    fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(formData)
-    })
-    .then(r => r.json())
-    .then(data => {
+    
+    try {
+        const response = await fetch('../api/tarifas.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
         if (data.success) {
-            mostrarAlerta(`Tarifa ${tarifaEditando ? 'actualizada' : 'creada'} con éxito`, 'success');
-            document.getElementById('formTarifa').reset();
-            document.getElementById('fecha_inicio').valueAsDate = new Date();
-            document.getElementById('fecha_fin').valueAsDate = new Date(Date.now() + (90 * 24 * 60 * 60 * 1000));
-            listarTarifasPaginado(1);
-            cerrarModalTarifa();
-            tarifaEditando = null;
+            mostrarExito('Tarifa guardada correctamente');
+            bootstrap.Modal.getInstance(document.getElementById('modalTarifa')).hide();
+            cargarTarifas(currentPage);
+            cargarEstadisticas();
         } else {
-            mostrarAlerta(data.error || `Error al ${tarifaEditando ? 'actualizar' : 'crear'} la tarifa`, 'danger');
+            mostrarError(data.error || 'Error al guardar la tarifa');
         }
-    })
-    .catch(error => {
-        console.error('Error al guardar tarifa:', error);
-        mostrarAlerta('Error al procesar la solicitud', 'danger');
-    });
+    } catch (error) {
+        mostrarError('Error al guardar la tarifa');
+    }
 }
 
-// Editar tarifa
-function editarTarifa(id) {
-    fetch(`../api/tarifas.php?id=${id}`)
-        .then(r => r.json())
-        .then(tarifa => {
-            if (!tarifa.id_tarifa) {
-                mostrarAlerta('No se encontró la tarifa', 'danger');
-                return;
-            }
-            
-            tarifaEditando = tarifa.id_tarifa;
-            document.getElementById('nombreTarifa').value = tarifa.nombre_tarifa;
-            document.getElementById('tipoHabitacion').value = tarifa.tipo_habitacion;
+async function editarTarifa(id) {
+    try {
+        const response = await fetch(`../api/tarifas.php?id=${id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const tarifa = data.data;
+            document.getElementById('nombreTarifa').value = tarifa.nombre;
+            document.getElementById('tipoHabitacion').value = tarifa.tipo_habitacion_id;
             document.getElementById('precio').value = tarifa.precio;
             document.getElementById('temporada').value = tarifa.temporada;
             document.getElementById('fecha_inicio').value = tarifa.fecha_inicio;
             document.getElementById('fecha_fin').value = tarifa.fecha_fin;
             
             document.getElementById('modalTarifaLabel').textContent = 'Editar Tarifa';
+            actualizarVistaPrevia();
+            
             const modal = new bootstrap.Modal(document.getElementById('modalTarifa'));
             modal.show();
-        })
-        .catch(error => {
-            console.error('Error al cargar tarifa:', error);
-            mostrarAlerta('Error al cargar los detalles de la tarifa', 'danger');
-        });
+        }
+    } catch (error) {
+        mostrarError('Error al cargar la tarifa');
+    }
 }
 
-// Ver detalle de tarifa
-function verDetalleTarifa(id) {
-    fetch(`../api/tarifas.php?id=${id}`)
-        .then(r => r.json())
-        .then(tarifa => {
-            if (!tarifa.id_tarifa) {
-                mostrarAlerta('No se encontró la tarifa', 'danger');
-                return;
-            }
-            
-            document.getElementById('detalleTarifaId').textContent = tarifa.id_tarifa;
-            document.getElementById('detalleTarifaNombre').textContent = tarifa.nombre_tarifa;
+async function eliminarTarifa(id) {
+    if (!confirm('¿Está seguro de eliminar esta tarifa?')) return;
+    
+    try {
+        const response = await fetch(`../api/tarifas.php?id=${id}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            mostrarExito('Tarifa eliminada correctamente');
+            cargarTarifas(currentPage);
+            cargarEstadisticas();
+        } else {
+            mostrarError(data.error || 'Error al eliminar la tarifa');
+        }
+    } catch (error) {
+        mostrarError('Error al eliminar la tarifa');
+    }
+}
+
+async function verDetalleTarifa(id) {
+    try {
+        const response = await fetch(`../api/tarifas.php?id=${id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const tarifa = data.data;
+            document.getElementById('detalleTarifaId').textContent = tarifa.id;
+            document.getElementById('detalleTarifaNombre').textContent = tarifa.nombre;
             document.getElementById('detalleTarifaTipo').textContent = tarifa.tipo_habitacion;
-            document.getElementById('detalleTarifaPrecio').textContent = formatearMoneda(tarifa.precio);
+            document.getElementById('detalleTarifaPrecio').textContent = tarifa.precio + '€';
             document.getElementById('detalleTarifaTemporada').textContent = tarifa.temporada;
             document.getElementById('detalleTarifaInicio').textContent = formatearFecha(tarifa.fecha_inicio);
             document.getElementById('detalleTarifaFin').textContent = formatearFecha(tarifa.fecha_fin);
             
             const modal = new bootstrap.Modal(document.getElementById('modalDetalleTarifa'));
             modal.show();
-        })
-        .catch(error => {
-            console.error('Error al cargar detalle de tarifa:', error);
-            mostrarAlerta('Error al cargar los detalles de la tarifa', 'danger');
-        });
-}
-
-// Eliminar tarifa
-function confirmarEliminar(id) {
-    if (confirm('¿Está seguro de que desea eliminar esta tarifa? Esta acción no se puede deshacer.')) {
-        fetch(`../api/tarifas.php?id=${id}`, { method: 'DELETE' })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    mostrarAlerta('Tarifa eliminada con éxito', 'success');
-                    listarTarifasPaginado(1);
-                } else {
-                    mostrarAlerta(data.error || 'Error al eliminar la tarifa', 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Error al eliminar tarifa:', error);
-                mostrarAlerta('Error al eliminar la tarifa', 'danger');
-            });
+        }
+    } catch (error) {
+        mostrarError('Error al cargar los detalles de la tarifa');
     }
 }
 
-// Cargar selectores dinámicos
-function cargarTiposHabitacion() {
-    fetch('../api/habitaciones.php?tipos=true')
-        .then(r => r.json())
-        .then(tipos => {
-            const selectTipo = document.getElementById('tipoHabitacion');
-            const selectFiltro = document.getElementById('filtroTipoHab');
-            
-            const options = tipos.map(t => 
-                `<option value="${t.tipo}">${t.tipo}</option>`
-            ).join('');
-            
-            if (selectTipo) {
-                selectTipo.innerHTML = '<option value="">Seleccione tipo</option>' + options;
-            }
-            if (selectFiltro) {
-                selectFiltro.innerHTML = '<option value="">Todos los tipos</option>' + options;
-            }
-        });
-}
-
-function cargarTemporadas() {
-    const temporadas = ['Alta', 'Media', 'Baja'];
-    const selectTemp = document.getElementById('temporada');
-    const selectFiltro = document.getElementById('filtroTemporada');
+// Modal de confirmación de iteración
+function mostrarConfirmacionIteracion(callback) {
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmacionIteracion'));
+    const btnConfirmar = document.getElementById('btnConfirmarIteracion');
     
-    const options = temporadas.map(t => 
-        `<option value="${t}">${t}</option>`
-    ).join('');
-    
-    if (selectTemp) {
-        selectTemp.innerHTML = '<option value="">Seleccione temporada</option>' + options;
-    }
-    if (selectFiltro) {
-        selectFiltro.innerHTML = '<option value="">Todas las temporadas</option>' + options;
-    }
-}
-
-// Funciones auxiliares
-function getTemporadaColor(temporada) {
-    const colores = {
-        'Alta': 'danger',
-        'Media': 'warning',
-        'Baja': 'success'
+    const handleConfirmar = () => {
+        modal.hide();
+        btnConfirmar.removeEventListener('click', handleConfirmar);
+        callback(true);
     };
-    return colores[temporada] || 'secondary';
+
+    btnConfirmar.addEventListener('click', handleConfirmar);
+    modal.show();
+
+    // Limpiar el evento cuando se cierra el modal
+    document.getElementById('modalConfirmacionIteracion').addEventListener('hidden.bs.modal', function () {
+        btnConfirmar.removeEventListener('click', handleConfirmar);
+        callback(false);
+    }, { once: true });
+}
+
+// Funciones de utilidad
+function actualizarVistaPrevia() {
+    const nombre = document.getElementById('nombreTarifa').value;
+    const tipo = document.getElementById('tipoHabitacion').options[document.getElementById('tipoHabitacion').selectedIndex].text;
+    const precio = document.getElementById('precio').value;
+    const temporada = document.getElementById('temporada').value;
+    const fechaInicio = document.getElementById('fecha_inicio').value;
+    const fechaFin = document.getElementById('fecha_fin').value;
+    
+    document.getElementById('previewNombre').textContent = nombre || '-';
+    document.getElementById('previewTipo').textContent = tipo !== 'Seleccione tipo' ? tipo : '-';
+    document.getElementById('previewPrecio').textContent = precio ? precio + ' €' : '0.00 €';
+    document.getElementById('previewTemporada').textContent = temporada || 'Temporada';
+    document.getElementById('previewInicio').textContent = fechaInicio ? formatearFecha(fechaInicio) : '-';
+    document.getElementById('previewFin').textContent = fechaFin ? formatearFecha(fechaFin) : '-';
+}
+
+function obtenerFiltros() {
+    return {
+        tipo: document.getElementById('filtro-tipo').value,
+        temporada: document.getElementById('filtro-temporada').value,
+        precio_min: document.getElementById('precio-min').value,
+        precio_max: document.getElementById('precio-max').value
+    };
 }
 
 function formatearFecha(fecha) {
-    return new Date(fecha).toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    });
+    return new Date(fecha).toLocaleDateString('es-ES');
 }
 
-function formatearMoneda(valor) {
-    return new Intl.NumberFormat('es-ES', {
-        style: 'currency',
-        currency: 'EUR'
-    }).format(valor);
+function mostrarExito(mensaje) {
+    Toastify({
+        text: mensaje,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "#28a745"
+    }).showToast();
 }
 
-function mostrarAlerta(mensaje, tipo) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
-    alertDiv.setAttribute('role', 'alert');
-    alertDiv.innerHTML = `
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-    document.body.appendChild(alertDiv);
-    
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 3000);
-}
-
-// Funciones de modal
-function cerrarModalTarifa() {
-    const modal = bootstrap.Modal.getInstance(document.getElementById('modalTarifa'));
-    if (modal) modal.hide();
-}
-
-function prepararNuevaTarifa() {
-    tarifaEditando = null;
-    document.getElementById('formTarifa').reset();
-    document.getElementById('fecha_inicio').valueAsDate = new Date();
-    document.getElementById('fecha_fin').valueAsDate = new Date(Date.now() + (90 * 24 * 60 * 60 * 1000));
-    document.getElementById('modalTarifaLabel').textContent = 'Nueva Tarifa';
-}
-
-function actualizarEstadisticas() {
-    fetch('../api/tarifas.php?stats=true')
-        .then(r => r.json())
-        .then(stats => {
-            document.getElementById('totalTarifas').textContent = stats.total;
-            document.getElementById('tarifaPromedio').textContent = formatearMoneda(stats.promedio);
-            document.getElementById('tarifasActivas').textContent = stats.activas;
-            document.getElementById('tarifasVencer').textContent = stats.por_vencer;
-        })
-        .catch(error => {
-            console.error('Error al cargar estadísticas:', error);
-            mostrarAlerta('Error al cargar estadísticas', 'danger');
-        });
+function mostrarError(mensaje) {
+    Toastify({
+        text: mensaje,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "#dc3545"
+    }).showToast();
 }

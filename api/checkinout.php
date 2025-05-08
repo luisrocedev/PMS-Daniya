@@ -56,11 +56,23 @@ try {
             $stmt3->execute();
             $stats = $stmt3->fetch(PDO::FETCH_ASSOC);
 
+            // Calcular ocupación actual (opcional, aquí solo ejemplo)
+            $sqlOcup = "SELECT COUNT(*) as ocupadas FROM reservas WHERE estado_reserva IN ('CheckIn','CheckOut') AND CURRENT_DATE BETWEEN fecha_entrada AND fecha_salida";
+            $ocup = $pdo->query($sqlOcup)->fetch(PDO::FETCH_ASSOC);
+            $sqlTotalHab = "SELECT COUNT(*) as total FROM habitaciones";
+            $totalHab = $pdo->query($sqlTotalHab)->fetch(PDO::FETCH_ASSOC);
+            $ocupacion = ($totalHab['total'] > 0) ? round(($ocup['ocupadas'] / $totalHab['total']) * 100) : 0;
+
             echo json_encode([
                 'success' => true,
                 'pendientesCheckIn' => $pendCheckIn ?: [],
                 'pendientesCheckOut' => $pendCheckOut ?: [],
-                'completadosHoy' => $stats ?: ['checkins' => 0, 'checkouts' => 0]
+                'stats' => [
+                    'pendingCheckins' => count($pendCheckIn),
+                    'pendingCheckouts' => count($pendCheckOut),
+                    'completedToday' => $stats['checkins'] ?? 0,
+                    'occupancyRate' => $ocupacion
+                ]
             ]);
         } catch (PDOException $e) {
             throw new Exception('Error al obtener datos de reservas: ' . $e->getMessage());
