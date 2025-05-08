@@ -1108,30 +1108,44 @@ label {
 }
 
 /* Mejoras específicas para la sección de clientes */
-#clientesTabs .nav-link {
-    border: none;
-    color: var(--text-secondary);
-    padding: 1rem 2rem;
-    border-radius: 8px 8px 0 0;
-    transition: background-color 0.3s ease, color 0.3s ease;
-    display: flex;
-    align-items: center;
+#clientesTabs {
+    border-bottom: 1px solid #d1d5db;
+    background: transparent;
+    padding-left: 1rem;
+    box-shadow: none !important;
 }
 
-#clientesTabs .nav-link i {
-    margin-right: 0.5rem;
-    font-size: 1.1rem;
+#clientesTabs .nav-link {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-bottom: none;
+    color: #538af7;
+    border-radius: 8px 8px 0 0;
+    margin-right: 4px;
+    min-width: 120px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    font-weight: 500;
+    box-shadow: none !important;
+    filter: none !important;
+    outline: none !important;
 }
 
 #clientesTabs .nav-link.active {
-    background-color: var(--primary-color);
-    color: var(--text-light);
-    font-weight: 500;
+    background: #538af7;
+    color: #fff;
+    border-color: #538af7 #538af7 #fff #538af7;
+    z-index: 2;
+    box-shadow: none !important;
+    filter: none !important;
+    outline: none !important;
 }
 
 #clientesTabs .nav-link:not(.active):hover {
-    background-color: var(--bg-sidebar-hover);
-    color: var(--primary-color);
+    background: #e9ecef;
+    color: #538af7;
+    border-color: #b6c6e3;
 }
 
 /* Mejoras para las tarjetas de clientes */
@@ -1178,4 +1192,18 @@ label {
 #clientesTabsContent .form-select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+}
+
+/* Asegura que los nav-tabs de clientes siempre sean visibles y sin animaciones */
+#clientesTabs {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: none !important;
+}
+
+#clientesTabs .nav-link {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: none !important;
 }

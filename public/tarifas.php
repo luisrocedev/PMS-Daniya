@@ -82,7 +82,7 @@ if (!isset($_SESSION['usuario_id'])) {
                 <div class="card mb-4 mt-4">
                     <div class="card-body">
                         <h3 class="card-title h5 mb-3">Buscar Tarifas</h3>
-                        <form onsubmit="event.preventDefault(); listarTarifasPaginado(1);" class="row g-3">
+                        <form onsubmit="event.preventDefault(); cargarTarifas(1);" class="row g-3">
                             <div class="col-md-3">
                                 <label for="filtroTipoHab" class="form-label">Tipo Habitación:</label>
                                 <div class="input-group">

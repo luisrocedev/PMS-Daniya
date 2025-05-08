@@ -6,20 +6,50 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarTiposHabitacion();
     cargarEstadisticas();
     cargarTarifas(1);
+    cargarFiltrosTarifas();
     
     // Listeners para vista previa en tiempo real
-    document.getElementById('nombreTarifa').addEventListener('input', actualizarVistaPrevia);
-    document.getElementById('tipoHabitacion').addEventListener('change', actualizarVistaPrevia);
-    document.getElementById('precio').addEventListener('input', actualizarVistaPrevia);
-    document.getElementById('temporada').addEventListener('change', actualizarVistaPrevia);
-    document.getElementById('fecha_inicio').addEventListener('change', actualizarVistaPrevia);
-    document.getElementById('fecha_fin').addEventListener('change', actualizarVistaPrevia);
+    const nombreTarifa = document.getElementById('nombreTarifa');
+    if (nombreTarifa) {
+        nombreTarifa.addEventListener('input', actualizarVistaPrevia);
+    }
+    const tipoHabitacion = document.getElementById('tipoHabitacion');
+    if (tipoHabitacion) {
+        tipoHabitacion.addEventListener('change', actualizarVistaPrevia);
+    }
+    const precio = document.getElementById('precio');
+    if (precio) {
+        precio.addEventListener('input', actualizarVistaPrevia);
+    }
+    const temporada = document.getElementById('temporada');
+    if (temporada) {
+        temporada.addEventListener('change', actualizarVistaPrevia);
+    }
+    const fechaInicio = document.getElementById('fecha_inicio');
+    if (fechaInicio) {
+        fechaInicio.addEventListener('change', actualizarVistaPrevia);
+    }
+    const fechaFin = document.getElementById('fecha_fin');
+    if (fechaFin) {
+        fechaFin.addEventListener('change', actualizarVistaPrevia);
+    }
 
     // Listener para filtros
-    document.getElementById('form-filtros').addEventListener('submit', (e) => {
-        e.preventDefault();
-        cargarTarifas(1);
-    });
+    const formFiltros = document.getElementById('form-filtros');
+    if (formFiltros) {
+        formFiltros.addEventListener('submit', (e) => {
+            e.preventDefault();
+            cargarTarifas(1);
+        });
+    }
+
+    // Solo añade event listeners si los elementos existen
+    const filtro = document.getElementById('filtroEstado');
+    if (filtro) {
+        filtro.addEventListener('change', () => cargarTarifas(1));
+    }
+
+    cargarTarifas(1);
 });
 
 // Funciones de carga de datos
@@ -32,10 +62,12 @@ async function cargarTiposHabitacion() {
             const selectTipos = document.getElementById('tipoHabitacion');
             const selectFiltro = document.getElementById('filtro-tipo');
             
-            data.data.forEach(tipo => {
-                selectTipos.innerHTML += `<option value="${tipo.id}">${tipo.nombre}</option>`;
-                selectFiltro.innerHTML += `<option value="${tipo.id}">${tipo.nombre}</option>`;
-            });
+            if (selectTipos && selectFiltro) {
+                data.data.forEach(tipo => {
+                    selectTipos.innerHTML += `<option value="${tipo.nombre}">${tipo.nombre}</option>`;
+                    selectFiltro.innerHTML += `<option value="${tipo.nombre}">${tipo.nombre}</option>`;
+                });
+            }
         }
     } catch (error) {
         mostrarError('Error al cargar tipos de habitación');
@@ -48,10 +80,15 @@ async function cargarEstadisticas() {
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById('total-tarifas').textContent = data.stats.total;
-            document.getElementById('tarifa-promedio').textContent = data.stats.promedio + '€';
-            document.getElementById('tarifas-activas').textContent = data.stats.activas;
-            document.getElementById('tipos-habitacion').textContent = data.stats.tipos;
+            const totalTarifas = document.getElementById('total-tarifas');
+            const tarifaPromedio = document.getElementById('tarifa-promedio');
+            const tarifasActivas = document.getElementById('tarifas-activas');
+            const tiposHabitacion = document.getElementById('tipos-habitacion');
+
+            if (totalTarifas) totalTarifas.textContent = data.stats.total;
+            if (tarifaPromedio) tarifaPromedio.textContent = data.stats.promedio + '€';
+            if (tarifasActivas) tarifasActivas.textContent = data.stats.activas;
+            if (tiposHabitacion) tiposHabitacion.textContent = data.stats.tipos;
         }
     } catch (error) {
         mostrarError('Error al cargar estadísticas');
@@ -75,34 +112,61 @@ async function cargarTarifas(pagina) {
     }
 }
 
+// Cargar tipos de habitación y temporadas para los filtros de búsqueda
+async function cargarFiltrosTarifas() {
+    // Tipos de habitación
+    try {
+        const respTipos = await fetch('../api/tipos_habitacion.php');
+        const dataTipos = await respTipos.json();
+        const selectFiltroTipo = document.getElementById('filtroTipoHab');
+        if (selectFiltroTipo && dataTipos.success && Array.isArray(dataTipos.data)) {
+            selectFiltroTipo.innerHTML = '<option value="">Todos los tipos</option>' +
+                dataTipos.data.map(tipo => `<option value="${tipo.nombre}">${tipo.nombre}</option>`).join('');
+        }
+    } catch (e) {
+        // No mostrar error, solo dejar el select vacío
+    }
+    // Temporadas
+    try {
+        const respTemps = await fetch('../api/tarifas.php');
+        const dataTemps = await respTemps.json();
+        const selectFiltroTemp = document.getElementById('filtroTemporada');
+        if (selectFiltroTemp && dataTemps.success && Array.isArray(dataTemps.data)) {
+            // Obtener temporadas únicas
+            const temporadas = [...new Set(dataTemps.data.map(t => t.temporada))];
+            selectFiltroTemp.innerHTML = '<option value="">Todas las temporadas</option>' +
+                temporadas.map(temp => `<option value="${temp}">${temp}</option>`).join('');
+        }
+    } catch (e) {
+        // No mostrar error
+    }
+}
+
 // Funciones de renderizado
 function renderizarTarifas(tarifas) {
     const tbody = document.getElementById('tabla-tarifas');
+    if (!tbody) return;
+
     tbody.innerHTML = '';
     
     tarifas.forEach(tarifa => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${tarifa.id}</td>
-            <td>${tarifa.nombre}</td>
+            <td>${tarifa.id_tarifa}</td>
+            <td>${tarifa.nombre_tarifa}</td>
             <td>${tarifa.tipo_habitacion}</td>
-            <td class="text-end">${tarifa.precio}€</td>
+            <td class="text-end">${parseFloat(tarifa.precio).toFixed(2)}€</td>
             <td>${tarifa.temporada}</td>
             <td>${formatearFecha(tarifa.fecha_inicio)}</td>
             <td>${formatearFecha(tarifa.fecha_fin)}</td>
-            <td class="text-center">
-                <span class="badge bg-${tarifa.estado === 'Activa' ? 'success' : 'danger'}">
-                    ${tarifa.estado}
-                </span>
-            </td>
             <td>
-                <button class="btn btn-sm btn-info me-1" onclick="verDetalleTarifa(${tarifa.id})">
+                <button class="btn btn-sm btn-info me-1" onclick="verDetalleTarifa(${tarifa.id_tarifa})">
                     <i class="fas fa-eye"></i>
                 </button>
-                <button class="btn btn-sm btn-primary me-1" onclick="editarTarifa(${tarifa.id})">
+                <button class="btn btn-sm btn-primary me-1" onclick="editarTarifa(${tarifa.id_tarifa})">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="eliminarTarifa(${tarifa.id})">
+                <button class="btn btn-sm btn-danger" onclick="eliminarTarifa(${tarifa.id_tarifa})">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -114,7 +178,8 @@ function renderizarTarifas(tarifas) {
 function renderizarPaginacion(total) {
     const totalPages = Math.ceil(total / itemsPerPage);
     const paginacion = document.getElementById('paginacion-tarifas');
-    
+    if (!paginacion) return;
+
     let html = `
         <div>
             Mostrando ${(currentPage - 1) * itemsPerPage + 1} - ${Math.min(currentPage * itemsPerPage, total)} de ${total}
@@ -153,12 +218,12 @@ async function guardarTarifa(event) {
     event.preventDefault();
     
     const formData = {
-        nombre: document.getElementById('nombreTarifa').value,
-        tipo_habitacion_id: document.getElementById('tipoHabitacion').value,
-        precio: document.getElementById('precio').value,
-        temporada: document.getElementById('temporada').value,
-        fecha_inicio: document.getElementById('fecha_inicio').value,
-        fecha_fin: document.getElementById('fecha_fin').value
+        nombre: document.getElementById('nombreTarifa')?.value || '',
+        tipo_habitacion_id: document.getElementById('tipoHabitacion')?.value || '',
+        precio: document.getElementById('precio')?.value || '',
+        temporada: document.getElementById('temporada')?.value || '',
+        fecha_inicio: document.getElementById('fecha_inicio')?.value || '',
+        fecha_fin: document.getElementById('fecha_fin')?.value || ''
     };
     
     try {
@@ -186,21 +251,31 @@ async function guardarTarifa(event) {
 
 async function editarTarifa(id) {
     try {
+        // Asegurarse de que el select de tipo de habitación esté cargado
+        if (typeof cargarTiposHabitacion === 'function') {
+            await cargarTiposHabitacion();
+        }
         const response = await fetch(`../api/tarifas.php?id=${id}`);
         const data = await response.json();
-        
         if (data.success) {
             const tarifa = data.data;
-            document.getElementById('nombreTarifa').value = tarifa.nombre;
-            document.getElementById('tipoHabitacion').value = tarifa.tipo_habitacion_id;
-            document.getElementById('precio').value = tarifa.precio;
-            document.getElementById('temporada').value = tarifa.temporada;
-            document.getElementById('fecha_inicio').value = tarifa.fecha_inicio;
-            document.getElementById('fecha_fin').value = tarifa.fecha_fin;
-            
-            document.getElementById('modalTarifaLabel').textContent = 'Editar Tarifa';
+            const nombreTarifa = document.getElementById('nombreTarifa');
+            const tipoHabitacion = document.getElementById('tipoHabitacion');
+            const precio = document.getElementById('precio');
+            const temporada = document.getElementById('temporada');
+            const fechaInicio = document.getElementById('fecha_inicio');
+            const fechaFin = document.getElementById('fecha_fin');
+
+            if (nombreTarifa) nombreTarifa.value = tarifa.nombre_tarifa || '';
+            if (tipoHabitacion) tipoHabitacion.value = tarifa.tipo_habitacion || '';
+            if (precio) precio.value = tarifa.precio || '';
+            if (temporada) temporada.value = tarifa.temporada || '';
+            if (fechaInicio) fechaInicio.value = tarifa.fecha_inicio || '';
+            if (fechaFin) fechaFin.value = tarifa.fecha_fin || '';
+
+            const modalLabel = document.getElementById('modalTarifaLabel');
+            if (modalLabel) modalLabel.textContent = 'Editar Tarifa';
             actualizarVistaPrevia();
-            
             const modal = new bootstrap.Modal(document.getElementById('modalTarifa'));
             modal.show();
         }
@@ -237,13 +312,21 @@ async function verDetalleTarifa(id) {
         
         if (data.success) {
             const tarifa = data.data;
-            document.getElementById('detalleTarifaId').textContent = tarifa.id;
-            document.getElementById('detalleTarifaNombre').textContent = tarifa.nombre;
-            document.getElementById('detalleTarifaTipo').textContent = tarifa.tipo_habitacion;
-            document.getElementById('detalleTarifaPrecio').textContent = tarifa.precio + '€';
-            document.getElementById('detalleTarifaTemporada').textContent = tarifa.temporada;
-            document.getElementById('detalleTarifaInicio').textContent = formatearFecha(tarifa.fecha_inicio);
-            document.getElementById('detalleTarifaFin').textContent = formatearFecha(tarifa.fecha_fin);
+            const detalleTarifaId = document.getElementById('detalleTarifaId');
+            const detalleTarifaNombre = document.getElementById('detalleTarifaNombre');
+            const detalleTarifaTipo = document.getElementById('detalleTarifaTipo');
+            const detalleTarifaPrecio = document.getElementById('detalleTarifaPrecio');
+            const detalleTarifaTemporada = document.getElementById('detalleTarifaTemporada');
+            const detalleTarifaInicio = document.getElementById('detalleTarifaInicio');
+            const detalleTarifaFin = document.getElementById('detalleTarifaFin');
+
+            if (detalleTarifaId) detalleTarifaId.textContent = tarifa.id;
+            if (detalleTarifaNombre) detalleTarifaNombre.textContent = tarifa.nombre;
+            if (detalleTarifaTipo) detalleTarifaTipo.textContent = tarifa.tipo_habitacion;
+            if (detalleTarifaPrecio) detalleTarifaPrecio.textContent = tarifa.precio + '€';
+            if (detalleTarifaTemporada) detalleTarifaTemporada.textContent = tarifa.temporada;
+            if (detalleTarifaInicio) detalleTarifaInicio.textContent = formatearFecha(tarifa.fecha_inicio);
+            if (detalleTarifaFin) detalleTarifaFin.textContent = formatearFecha(tarifa.fecha_fin);
             
             const modal = new bootstrap.Modal(document.getElementById('modalDetalleTarifa'));
             modal.show();
@@ -276,27 +359,35 @@ function mostrarConfirmacionIteracion(callback) {
 
 // Funciones de utilidad
 function actualizarVistaPrevia() {
-    const nombre = document.getElementById('nombreTarifa').value;
-    const tipo = document.getElementById('tipoHabitacion').options[document.getElementById('tipoHabitacion').selectedIndex].text;
-    const precio = document.getElementById('precio').value;
-    const temporada = document.getElementById('temporada').value;
-    const fechaInicio = document.getElementById('fecha_inicio').value;
-    const fechaFin = document.getElementById('fecha_fin').value;
+    const nombre = document.getElementById('nombreTarifa')?.value || '-';
+    const tipo = document.getElementById('tipoHabitacion')?.options[document.getElementById('tipoHabitacion')?.selectedIndex]?.text || '-';
+    const precio = document.getElementById('precio')?.value || '0.00';
+    const temporada = document.getElementById('temporada')?.value || 'Temporada';
+    const fechaInicio = document.getElementById('fecha_inicio')?.value || '-';
+    const fechaFin = document.getElementById('fecha_fin')?.value || '-';
     
-    document.getElementById('previewNombre').textContent = nombre || '-';
-    document.getElementById('previewTipo').textContent = tipo !== 'Seleccione tipo' ? tipo : '-';
-    document.getElementById('previewPrecio').textContent = precio ? precio + ' €' : '0.00 €';
-    document.getElementById('previewTemporada').textContent = temporada || 'Temporada';
-    document.getElementById('previewInicio').textContent = fechaInicio ? formatearFecha(fechaInicio) : '-';
-    document.getElementById('previewFin').textContent = fechaFin ? formatearFecha(fechaFin) : '-';
+    const previewNombre = document.getElementById('previewNombre');
+    const previewTipo = document.getElementById('previewTipo');
+    const previewPrecio = document.getElementById('previewPrecio');
+    const previewTemporada = document.getElementById('previewTemporada');
+    const previewInicio = document.getElementById('previewInicio');
+    const previewFin = document.getElementById('previewFin');
+
+    if (previewNombre) previewNombre.textContent = nombre;
+    if (previewTipo) previewTipo.textContent = tipo !== 'Seleccione tipo' ? tipo : '-';
+    if (previewPrecio) previewPrecio.textContent = precio + ' €';
+    if (previewTemporada) previewTemporada.textContent = temporada;
+    if (previewInicio) previewInicio.textContent = fechaInicio;
+    if (previewFin) previewFin.textContent = fechaFin;
 }
 
 function obtenerFiltros() {
+    // Protege el acceso a los elementos
+    const tipo = document.getElementById('filtroTipo');
+    const estado = document.getElementById('filtroEstado');
     return {
-        tipo: document.getElementById('filtro-tipo').value,
-        temporada: document.getElementById('filtro-temporada').value,
-        precio_min: document.getElementById('precio-min').value,
-        precio_max: document.getElementById('precio-max').value
+        tipo: tipo ? tipo.value : '',
+        estado: estado ? estado.value : ''
     };
 }
 
@@ -305,21 +396,9 @@ function formatearFecha(fecha) {
 }
 
 function mostrarExito(mensaje) {
-    Toastify({
-        text: mensaje,
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "#28a745"
-    }).showToast();
+    alert(mensaje);
 }
 
 function mostrarError(mensaje) {
-    Toastify({
-        text: mensaje,
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "#dc3545"
-    }).showToast();
+    alert(mensaje);
 }

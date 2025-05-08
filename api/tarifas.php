@@ -64,7 +64,7 @@ if ($method === 'GET') {
 
     if ($id) {
         $row = $superModel->getById('tarifas', $id);
-        echo json_encode($row);
+        echo json_encode(['success' => true, 'data' => $row]);
         exit;
     }
 
@@ -120,6 +120,7 @@ if ($method === 'GET') {
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
+        'success' => true,
         'data' => $data,
         'total' => (int)$total,
         'page' => $page,
